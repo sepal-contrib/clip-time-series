@@ -11,3 +11,5 @@ def getHeader():
     ycoord = "YCoordinate"
     
     return [map_code, point_id, xcoord, ycoord]
+    
+    
