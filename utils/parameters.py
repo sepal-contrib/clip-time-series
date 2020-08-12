@@ -20,8 +20,8 @@ def getAvailableBands():
 def getSources():
     
     return {
-        'landsat': 'LANDSAT/LE07/C01/T1_SR', 
-        'sentinel': 'COPERNICUS/S2_SR'
+        'landsat 7': 'LANDSAT/LE07/C01/T1_SR', 
+        'sentinel 2': 'COPERNICUS/S2_SR'
     }
 
 def getTxt():
