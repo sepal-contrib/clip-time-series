@@ -4,7 +4,7 @@ from utils import messages as ms
 from sepal_ui.scripts import mapping
 import geemap
 
-def checkFile(file):
+def isConform(file):
     """perform several checks on the file given by the user retrun an error message if something is wrong else 0"""
     
     #check if the file exist
@@ -25,12 +25,10 @@ def checkFile(file):
     #validate
     return 0
 
-def getMap(file):
+def setMap(file, m):
     """create a map and a df list of points"""
     
     pts = pd.read_csv(file)
-    
-    m = mapping.init_map()[1]
     
     #add the pts on the map
     markers, popups = [], []
@@ -43,4 +41,4 @@ def getMap(file):
     marker_cluster = geemap.MarkerCluster(markers=tuple(markers), popups=popups)
     m.add_layer(marker_cluster)
 
-    return (m, pts)
+    return pts
