@@ -34,7 +34,7 @@ def setVizMap():
     
     return m
 
-def setLayer(maps, pts, bands):
+def setLayer(maps, pts, bands, sources):
     
     size = 2000  # 2km
     geoms = [[pts.loc[pt]['lng'], pts.loc[pt]['lat']] for pt in range(len(pts))]
@@ -43,24 +43,59 @@ def setLayer(maps, pts, bands):
     #creates buffers
     buffer = multiPoint.buffer(size)
     
-    #pour l'instant que du landsat
-    start_landsat = 2005
-    end_landsat = 2019
-    dataset_source = pm.getSources()['landsat']
-    bands = pm.getAvailableBands()[bands][0]
+    cpt_map = 0
+    ################################################
+    ##     create the layers from 2005 to 2015    ##
+    ################################################
+    start_year = 2005
+    end_year = 2016
     
-    layers = []
-    for year in range(start_landsat, end_landsat+1):
+    for year in range(start_year, end_year):
+        if 'landsat 7' in sources:
+            dataset_source = pm.getSources()['landsat 7']
+            viz_band = pm.getAvailableBands()[bands][0]
+            
+            start = str(year) + '-01-01';
+            end = str(year) + '-12-31';
+            
+            dataset = ee.ImageCollection(dataset_source).filterDate(start, end)
+            clip = dataset.median().clip(buffer)
+            
+            maps[cpt_map].addLayer(clip, pm.landsatVizParam(viz_band), 'viz')
+        else:
+            maps[cpt_map].addLayer(buffer, {}, 'viz')
+            
+        cpt_map += 1
+            
+    ################################################
+    ##     create the layers from 2016 to 2019    ##
+    ################################################
+    start_year = 2016
+    end_year = 2020
+    
+    for year in range(start_year, end_year):
         start = str(year) + '-01-01';
         end = str(year) + '-12-31';
         
-        dataset = ee.ImageCollection(dataset_source).filterDate(start, end)
-        clip = dataset.median().clip(buffer)
-        
-        layers.append(clip)
-        
-    [maps[i].addLayer(layers[i], pm.landsatVizParam(bands), 'viz') for i in range(len(maps))]
+        if 'sentinel 2' in sources:
+            dataset_source = pm.getSources()['sentinel 2']
+            viz_band = pm.getAvailableBands()[bands][1]
+            
+            dataset = ee.ImageCollection(dataset_source).filterDate(start, end) #.filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE',20))
+            clip = dataset.median().clip(buffer)
+            
+            maps[cpt_map].addLayer(clip, pm.sentinelVizParam(viz_band), 'viz')
+        else:
+            dataset_source = pm.getSources()['landsat 7']
+            viz_band = pm.getAvailableBands()[bands][0]
+            
+            dataset = ee.ImageCollection(dataset_source).filterDate(start, end)
+            clip = dataset.median().clip(buffer)
+            
+            maps[cpt_map].addLayer(clip, pm.landsatVizParam(viz_band), 'viz')
     
+        cpt_map += 1
+        
     return
     
     
