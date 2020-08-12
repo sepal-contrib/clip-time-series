@@ -34,7 +34,7 @@ def setVizMap():
     
     return m
 
-def setLayer(maps, pts):
+def setLayer(maps, pts, bands):
     
     size = 2000  # 2km
     geoms = [[pts.loc[pt]['lng'], pts.loc[pt]['lat']] for pt in range(len(pts))]
@@ -47,7 +47,7 @@ def setLayer(maps, pts):
     start_landsat = 2005
     end_landsat = 2019
     dataset_source = pm.getSources()['landsat']
-    bands = pm.getAvailableBands()['Red, Green, Blue'][0]
+    bands = pm.getAvailableBands()[bands][0]
     
     layers = []
     for year in range(start_landsat, end_landsat+1):
@@ -55,7 +55,7 @@ def setLayer(maps, pts):
         end = str(year) + '-12-31';
         
         dataset = ee.ImageCollection(dataset_source).filterDate(start, end)
-        clip = dataset.mean().clip(buffer)
+        clip = dataset.median().clip(buffer)
         
         layers.append(clip)
         
