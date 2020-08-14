@@ -2,7 +2,7 @@ import ee
 import time
 import sys
 from sepal_ui.scripts import utils as su
-from accuracy-assessment.scripts.utils import messages as ms
+from utils import messages as ms
 
 ee.Initialize()
 
