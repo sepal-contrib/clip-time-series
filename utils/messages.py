@@ -23,3 +23,16 @@ NO_PTS = "No points of observation are registered. Please go back to step 1"
 NO_BANDS = "Please provide a the bands you want to observe on your images"
 NO_SOURCES = "please provide the satellite sources"
 SENTINEL_DISABLED = "The processing of the sentinel 2 images provide lots of blanks areas at the moment. we strongly suggest to only use landsat 7 images"
+
+##################################
+##         Exports              ##
+##################################
+
+VALID_DATA = "Before launching the exportation you need to validate your data. They will be display  in this very frame. If you need to perform any modification please go back to the previous stages"
+VALID_BTN = "Validate data"
+EXPORT_INTRO = 'Click on the "Export data" button to export your data to a pdf file'
+EXPORT_BTN = "Export data"
+MISSING_IN = "One or several inputs are missing please process the previous steps"
+EXPORT_INPUTS = 'Using the set of points provided in "{}", the process will export the "{}" data using the "{}" bands'
+NO_VALID = "Please verify you're input before launching the export process"
+
