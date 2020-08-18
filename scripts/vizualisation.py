@@ -7,6 +7,21 @@ from utils import parameters as pm
 
 ee.Initialize()
 
+def getImage(sources, bands, mask, year):
+    
+    #don't take sources into account at the moment 
+    dataset_source, bandId = pm.getSatelites(year)
+    viz_band = pm.getAvailableBands()[bands][bandId]
+    
+    start = str(year) + '-01-01'
+    end = str(year) + '-12-31'
+    
+    dataset = ee.ImageCollection(dataset_source).filterDate(start, end)
+    clip = dataset.median().clip(mask)
+    
+    return (clip, viz_band)
+    
+
 def setVizMap():
     
     center = [0, 0]
@@ -44,56 +59,47 @@ def setLayer(maps, pts, bands, sources):
     
     cpt_map = 0
     ################################################
-    ##     create the layers from 2005 to 2015    ##
+    ##     create the layers from 2005 to 2020    ##
     ################################################
     start_year = 2005
-    end_year = 2016
-    
-    for year in range(start_year, end_year):
-        if 'landsat 7' in sources:
-            dataset_source = pm.getSources()['landsat 7']
-            viz_band = pm.getAvailableBands()[bands][0]
-            
-            start = str(year) + '-01-01';
-            end = str(year) + '-12-31';
-            
-            dataset = ee.ImageCollection(dataset_source).filterDate(start, end)
-            clip = dataset.median().clip(ee_multiPolygon)
-            
-            maps[cpt_map].addLayer(clip, pm.landsatVizParam(viz_band), 'viz')
-        else:
-            maps[cpt_map].addLayer(ee_multiPolygon, {}, 'viz')
-            
-        cpt_map += 1
-            
-    ################################################
-    ##     create the layers from 2016 to 2019    ##
-    ################################################
-    start_year = 2016
     end_year = 2020
     
     for year in range(start_year, end_year):
-        start = str(year) + '-01-01';
-        end = str(year) + '-12-31';
         
-        if 'sentinel 2' in sources:
-            dataset_source = pm.getSources()['sentinel 2']
-            viz_band = pm.getAvailableBands()[bands][1]
+        clip, viz_band = getImage(sources, bands, ee_multiPolygon, year)
             
-            dataset = ee.ImageCollection(dataset_source).filterDate(start, end) #.filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE',20))
-            clip = dataset.median().clip(buffer)
+        maps[cpt_map].addLayer(clip, pm.landsatVizParam(viz_band), 'viz')
             
-            maps[cpt_map].addLayer(clip, pm.sentinelVizParam(viz_band), 'viz')
-        else:
-            dataset_source = pm.getSources()['landsat 7']
-            viz_band = pm.getAvailableBands()[bands][0]
-            
-            dataset = ee.ImageCollection(dataset_source).filterDate(start, end)
-            clip = dataset.median().clip(ee_multiPolygon)
-            
-            maps[cpt_map].addLayer(clip, pm.landsatVizParam(viz_band), 'viz')
-    
         cpt_map += 1
+            
+#    ################################################
+#    ##     create the layers from 2016 to 2019    ##
+#    ################################################
+#    start_year = 2016
+#    end_year = 2020
+#    
+#    for year in range(start_year, end_year):
+#        start = str(year) + '-01-01';
+#        end = str(year) + '-12-31';
+#        
+#        if 'sentinel 2' in sources:
+#            dataset_source = pm.getSources()['sentinel 2']
+#            viz_band = pm.getAvailableBands()[bands][1]
+#            
+#            dataset = ee.ImageCollection(dataset_source).filterDate(start, end) #.filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE',20))
+#            clip = dataset.median().clip(buffer)
+#            
+#            maps[cpt_map].addLayer(clip, pm.sentinelVizParam(viz_band), 'viz')
+#        else:
+#            dataset_source = pm.getSources()['landsat 7']
+#            viz_band = pm.getAvailableBands()[bands][0]
+#            
+#            dataset = ee.ImageCollection(dataset_source).filterDate(start, end)
+#            clip = dataset.median().clip(ee_multiPolygon)
+#            
+#            maps[cpt_map].addLayer(clip, pm.landsatVizParam(viz_band), 'viz')
+#    
+#        cpt_map += 1
         
     return
     
