@@ -66,21 +66,21 @@ class gdrive(object):
     def download_files(self, files, local_path):
         service = self.service
         
-        for fId in files:
-            request = service.files().get_media(fileId=fId['id'])
+        for file in files:
+            request = service.files().get_media(fileId=file['id'])
             fh = io.BytesIO()
             downloader = MediaIoBaseDownload(fh, request)
             done = False
             while done is False:
                 status, done = downloader.next_chunk()
             
-            fo = open(local_path+fId['name'], 'wb')
+            fo = open(local_path+file['name'], 'wb')
             fo.write(fh.getvalue())
             fo.close()
 
-    def delete_files(self, files_id):
+    def delete_files(self, files):
 
         service = self.service
         
-        for fId in files_id:
-            service.files().delete(fileId=fId).execute()
+        for file in files:
+            service.files().delete(fileId=file['id']).execute()
