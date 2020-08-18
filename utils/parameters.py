@@ -25,13 +25,10 @@ def getTmpDir():
 ##      constant        ##
 ##########################
 
-def getPositionPdf(i):
-    postionsSnake = [[0, 0], [1, 0], [2, 0], [3, 0], [4, 0], [4, 1], [3, 1], [2, 1], [1, 1], [0, 1], [0, 2], [1, 2], [2, 2], [3, 2], [4, 2]]
+def getPositionPdf(i):   
+    positionsRow = [[int(i/5), i%5] for i in range(15)]
     
-    postionsColumn = [[i%5, int(i/5)] for i in range(15)]
-    positionsRow = [[int(i/3), i%3] for i in range(15)]
-    
-    return postionsSnake[i]
+    return positionsRow[i]
 
 ##########################
 ##       function       ##

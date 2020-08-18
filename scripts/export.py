@@ -109,9 +109,9 @@ def run(file, bands, sources, output):
         #each point is display on one single page
         for index, row in pts.iterrows():
             
-            page_title = "Pt_{} (lat:{:.5f}, lng:{:.5f})".format(index, row['lat'], row['lng'])
+            page_title = "Pt_{} (lat:{:.5f}, lng:{:.5f})".format(index+1, row['lat'], row['lng'])
             su.displayIO(output, 'Creating page for pt {}'.format(index))
-            fig, axes = plt.subplots(5, 3, figsize=(8.27,11.69))
+            fig, axes = plt.subplots(3, 5, figsize=(11.69,8.27))
             fig.suptitle(page_title, fontsize=16)
             
             #display the images in a fig and export it as a pdf page
