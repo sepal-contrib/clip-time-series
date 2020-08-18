@@ -37,26 +37,74 @@ def getPositionPdf(i):
 ##       function       ##
 ##########################
 
+def getSatelites(year):
+    """return dataset name and integer for the bands"""
+    if year < 2012:
+        dataset = 'LANDSAT/LT05/C01/T1_SR'
+        bandId = 1
+    elif year == 2012:
+        dataset = 'LANDSAT/LE07/C01/T1_SR'
+        bandId = 0
+    elif year > 2012:
+        dataset = "LANDSAT/LC08/C01/T1_SR"
+        bandId = 2
+        
+    return (dataset, bandId)
+
 def getAvailableBands():
-    """give the bands composition for each name. 0 being the landsat composition and 1 the sentinel"""
+    """give the bands composition for each name. 
+    0 being the landsat 7, 
+    1 landsat 5, 
+    2, landsat 8 
+    3: sentinel 2"""
     
     bands = {
-        'Red, Green, Blue' : [['B3', 'B2', 'B1'], ['B4', 'B3', 'B2']],
-        'Nir, Red, Green' : [['B4', 'B3', 'B2'], ['B8', 'B4', 'B3']],
-        'Nir, Swir1, Red' : [['B4', 'B5', 'B3'], ['B8', 'B11', 'B4']],
-        'Swir2, Nir, Red' : [['B7', 'B4', 'B3'], ['B12', 'B8', 'B4']],
-        'Swir2, Swir1, Red' : [['B7', 'B5', 'B3'], ['B12', 'B11', 'B4']],
-        'Swir2, Nir, Green' : [['B7', 'B4', 'B2'], ['B12', 'B8', 'B3']]
+        'Red, Green, Blue' : [
+            ['B3', 'B2', 'B1'], 
+            ['B3', 'B2', 'B1'],
+            ['B4', 'B3', 'B2'],
+            ['B4', 'B3', 'B2']
+        ],
+        'Nir, Red, Green' : [
+            ['B4', 'B3', 'B2'], 
+            ['B4', 'B3', 'B2'],
+            ['B5', 'B4', 'B3'],
+            ['B8', 'B4', 'B3']
+        ],
+        'Nir, Swir1, Red' : [
+            ['B4', 'B5', 'B3'],
+            ['B4', 'B5', 'B3'],
+            ['B5', 'B6', 'B4'],
+            ['B8', 'B11', 'B4']
+        ],
+        'Swir2, Nir, Red' : [
+            ['B7', 'B4', 'B3'], 
+            ['B7', 'B4', 'B3'],
+            ['B7', 'B5', 'B4'],
+            ['B12', 'B8', 'B4']
+        ],
+        'Swir2, Swir1, Red' : [
+            ['B7', 'B5', 'B3'], 
+            ['B7', 'B5', 'B3'],
+            ['B7', 'B6', 'B4'],
+            ['B12', 'B11', 'B4']
+        ],
+        'Swir2, Nir, Green' : [
+            ['B7', 'B4', 'B2'], 
+            ['B7', 'B4', 'B2'],
+            ['B7', 'B5', 'B3'],
+            ['B12', 'B8', 'B3']
+        ]
     }
     
     return bands
 
 def getSources():
     
-    return {
-        'landsat 7': 'LANDSAT/LE07/C01/T1_SR', 
-        'sentinel 2': 'COPERNICUS/S2_SR'
-    }
+    return [
+        'landsat'
+        #'sentinel'
+    ]
 
 def getTxt():
     """get all the txt files available in th folders"""
