@@ -16,9 +16,9 @@ ee.Initialize()
 
 def getImage(bands, sources, year):
     
-    #check only for landsat at the moment 
-    viz_bands = pm.getAvailableBands()[bands][0]
-    dataset_source = pm.getSources()['landsat 7']
+    #check only for landsats satelites at the moment
+    dataset_source, bandId = pm.getSatelites(year)
+    viz_bands = pm.getAvailableBands()[bands][bandId]
     
     start = str(year) + '-01-01'
     end = str(year) + '-12-31'
