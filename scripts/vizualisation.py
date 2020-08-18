@@ -38,10 +38,9 @@ def setLayer(maps, pts, bands, sources):
     
     size = 2000  # 2km
     geoms = [[pts.loc[pt]['lng'], pts.loc[pt]['lat']] for pt in range(len(pts))]
-    multiPoint = ee.Geometry.MultiPoint(geoms);
-    
-    #creates buffers
-    buffer = multiPoint.buffer(size)
+    ee_pts = [ee.Geometry.Point(geom) for geom in geoms]
+    ee_buffers = [ee_pt.buffer(size).bounds() for ee_pt in ee_pts]
+    ee_multiPolygon = ee.Geometry.MultiPolygon(ee_buffers);
     
     cpt_map = 0
     ################################################
@@ -59,11 +58,11 @@ def setLayer(maps, pts, bands, sources):
             end = str(year) + '-12-31';
             
             dataset = ee.ImageCollection(dataset_source).filterDate(start, end)
-            clip = dataset.median().clip(buffer)
+            clip = dataset.median().clip(ee_multiPolygon)
             
             maps[cpt_map].addLayer(clip, pm.landsatVizParam(viz_band), 'viz')
         else:
-            maps[cpt_map].addLayer(buffer, {}, 'viz')
+            maps[cpt_map].addLayer(ee_multiPolygon, {}, 'viz')
             
         cpt_map += 1
             
@@ -90,7 +89,7 @@ def setLayer(maps, pts, bands, sources):
             viz_band = pm.getAvailableBands()[bands][0]
             
             dataset = ee.ImageCollection(dataset_source).filterDate(start, end)
-            clip = dataset.median().clip(buffer)
+            clip = dataset.median().clip(ee_multiPolygon)
             
             maps[cpt_map].addLayer(clip, pm.landsatVizParam(viz_band), 'viz')
     
