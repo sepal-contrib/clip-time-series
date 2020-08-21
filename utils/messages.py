@@ -10,6 +10,12 @@ FILE_SELECT = "Select a file"
 NOT_A_FILE = "the file {} does not exist"
 ERROR_READING_FILE = "the file {} cannot be read"
 WRONG_HEADERS = "The header of the file are not well diplayed"
+COL_INTRO = "Select the columns associated with the 3 key informations"
+COL_BTN = "Validate your columns"
+COL_LNG = "select the Longitude column"
+COL_LAT = "Select the latitude column"
+COL_ID = "select the id column"
+READ_COLUMNS = "The dropdown have been updated with the header of your file : [{}]"
 
 
 ##################################

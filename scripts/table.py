@@ -18,9 +18,9 @@ def isConform(file):
         return ms.ERROR_READING_FILE.format(file)
     
     #check headers 
-    headers = ['lat', 'lng']
-    if not list(df.columns) == headers:
-        return ms.WRONG_HEADERS
+    #headers = ['lat', 'lng']
+    #if not list(df.columns) == headers:
+    #    return ms.WRONG_HEADERS
     
     #validate
     return 0
