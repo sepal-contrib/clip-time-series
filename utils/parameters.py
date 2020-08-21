@@ -147,17 +147,17 @@ def landsatVizParam(bands, buffer, image):
         'scale': 30
     })
     
-    viz_max = max(
-        params.get('{}_p95'.format(bands[0])).getInfo(), 
-        params.get('{}_p95'.format(bands[1])).getInfo(), 
-        params.get('{}_p95'.format(bands[2])).getInfo()
-    )
-
-    viz_min = min(
-        params.get('{}_p5'.format(bands[0])).getInfo(),
-        params.get('{}_p5'.format(bands[1])).getInfo(),
-        params.get('{}_p5'.format(bands[2])).getInfo()
-    )
+    #viz_max = max(
+    #    params.get('{}_p95'.format(bands[0])).getInfo(), 
+    #    params.get('{}_p95'.format(bands[1])).getInfo(), 
+    #    params.get('{}_p95'.format(bands[2])).getInfo()
+    #)
+    #
+    #viz_min = min(
+    #    params.get('{}_p5'.format(bands[0])).getInfo(),
+    #    params.get('{}_p5'.format(bands[1])).getInfo(),
+    #    params.get('{}_p5'.format(bands[2])).getInfo()
+    #)
     
     return {
         'min': [
@@ -172,6 +172,33 @@ def landsatVizParam(bands, buffer, image):
         ],
         'bands': bands
     }
+
+def getCloudMask(bandId):
+    """ return the cloud masking function adapted to the apropriate satellite"""
+    
+    if bandId in [0, 1]:
+        def cloudMask(image):
+            qa = image.select('pixel_qa')
+            # If the cloud bit (5) is set and the cloud confidence (7) is high
+            # or the cloud shadow bit is set (3), then it's a bad pixel.
+            cloud = qa.bitwiseAnd(1 << 5).And(qa.bitwiseAnd(1 << 7)).Or(qa.bitwiseAnd(1 << 3))
+            # Remove edge pixels that don't occur in all bands
+            mask2 = image.mask().reduce(ee.Reducer.min())
+            
+            return image.updateMask(cloud.Not()).updateMask(mask2)
+    elif bandId == 2:
+        def cloudMask(image):
+            # Bits 3 and 5 are cloud shadow and cloud, respectively.
+            cloudShadowBitMask = (1 << 3);
+            cloudsBitMask = (1 << 5);
+            # Get the pixel QA band.
+            qa = image.select('pixel_qa');
+            # Both flags should be set to zero, indicating clear conditions.
+            mask = qa.bitwiseAnd(cloudShadowBitMask).eq(0).And(qa.bitwiseAnd(cloudsBitMask).eq(0));
+            
+            return image.updateMask(mask)
+    
+    return cloudMask
 
 def getnbIntervals():
     return sentinel_end - landsat_start + 1

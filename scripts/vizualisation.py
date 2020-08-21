@@ -16,7 +16,8 @@ def getImage(sources, bands, mask, year):
     start = str(year) + '-01-01'
     end = str(year) + '-12-31'
     
-    dataset = ee.ImageCollection(dataset_source).filterDate(start, end)
+    dataset = ee.ImageCollection(dataset_source)
+    dataset = dataset.filterDate(start, end).map(pm.getCloudMask(bandId))
     clip = dataset.median().clip(mask)
     
     return (clip, viz_band)
