@@ -9,15 +9,21 @@ ee.Initialize()
 
 def getImage(sources, bands, mask, year):
     
-    #don't take sources into account at the moment 
-    dataset_source, bandId = pm.getSatelites(year)
-    viz_band = pm.getAvailableBands()[bands][bandId]
-    
     start = str(year) + '-01-01'
     end = str(year) + '-12-31'
     
-    dataset = ee.ImageCollection(dataset_source)
-    dataset = dataset.filterDate(start, end).filterBounds(mask).map(pm.getCloudMask(bandId))
+    #priority selector for satellites
+    for satteliteID in pm.getSatelites():
+        dataset = ee.ImageCollection(pm.getSatelites()[satteliteID]) \
+            .filterDate(start, end) \
+            .filterBounds(mask) \
+            .map(pm.getCloudMask(satteliteID))
+        
+        if dataset.size().getInfo() > 0:
+            break
+        
+    
+    viz_band = pm.getAvailableBands()[bands][satteliteID]
     clip = dataset.median().clip(mask)
     
     return (clip, viz_band)

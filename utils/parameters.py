@@ -37,19 +37,13 @@ def getPositionPdf(i):
 ##       function       ##
 ##########################
 
-def getSatelites(year):
-    """return dataset name and integer for the bands"""
-    #if year < 2012:
-    #    dataset = 'LANDSAT/LT05/C01/T1_SR'
-    #    bandId = 1
-    if year <= 2012:
-        dataset = 'LANDSAT/LE07/C01/T1_SR'
-        bandId = 0
-    elif year > 2012:
-        dataset = "LANDSAT/LC08/C01/T1_SR"
-        bandId = 2
+def getSatelites():
+    return {
+        'landsat_8': 'LANDSAT/LC08/C01/T1_SR',
+        'landsat_5': 'LANDSAT/LT05/C01/T1_SR',
+        'landsat_7': 'LANDSAT/LE07/C01/T1_SR',
+    }
         
-    return (dataset, bandId)
 
 def getAvailableBands():
     """give the bands composition for each name. 
@@ -59,42 +53,42 @@ def getAvailableBands():
     3: sentinel 2"""
     
     bands = {
-        'Red, Green, Blue' : [
-            ['B3', 'B2', 'B1'], 
-            ['B3', 'B2', 'B1'],
-            ['B4', 'B3', 'B2'],
-            ['B4', 'B3', 'B2']
-        ],
-        'Nir, Red, Green' : [
-            ['B4', 'B3', 'B2'], 
-            ['B4', 'B3', 'B2'],
-            ['B5', 'B4', 'B3'],
-            ['B8', 'B4', 'B3']
-        ],
-        'Nir, Swir1, Red' : [
-            ['B4', 'B5', 'B3'],
-            ['B4', 'B5', 'B3'],
-            ['B5', 'B6', 'B4'],
-            ['B8', 'B11', 'B4']
-        ],
-        'Swir2, Nir, Red' : [
-            ['B7', 'B4', 'B3'], 
-            ['B7', 'B4', 'B3'],
-            ['B7', 'B5', 'B4'],
-            ['B12', 'B8', 'B4']
-        ],
-        'Swir2, Swir1, Red' : [
-            ['B7', 'B5', 'B3'], 
-            ['B7', 'B5', 'B3'],
-            ['B7', 'B6', 'B4'],
-            ['B12', 'B11', 'B4']
-        ],
-        'Swir2, Nir, Green' : [
-            ['B7', 'B4', 'B2'], 
-            ['B7', 'B4', 'B2'],
-            ['B7', 'B5', 'B3'],
-            ['B12', 'B8', 'B3']
-        ]
+        'Red, Green, Blue' : {
+            'landsat_7': ['B3', 'B2', 'B1'], 
+            'landsat_5': ['B3', 'B2', 'B1'],
+            'landsat_8': ['B4', 'B3', 'B2'],
+            'sentinel_2': ['B4', 'B3', 'B2']
+        },
+        'Nir, Red, Green' : {
+            'landsat_7': ['B4', 'B3', 'B2'], 
+            'landsat_5': ['B4', 'B3', 'B2'],
+            'landsat_8': ['B5', 'B4', 'B3'],
+            'sentinel_2': ['B8', 'B4', 'B3']
+        },
+        'Nir, Swir1, Red' : {
+            'landsat_7': ['B4', 'B5', 'B3'],
+            'landsat_5': ['B4', 'B5', 'B3'],
+            'landsat_8': ['B5', 'B6', 'B4'],
+            'sentinel_2': ['B8', 'B11', 'B4']
+        },
+        'Swir2, Nir, Red' : {
+            'landsat_7': ['B7', 'B4', 'B3'], 
+            'landsat_5': ['B7', 'B4', 'B3'],
+            'landsat_8': ['B7', 'B5', 'B4'],
+            'sentinel_2': ['B12', 'B8', 'B4']
+        },
+        'Swir2, Swir1, Red' : {
+            'landsat_7': ['B7', 'B5', 'B3'], 
+            'landsat_5': ['B7', 'B5', 'B3'],
+            'landsat_8': ['B7', 'B6', 'B4'],
+            'sentinel_2': ['B12', 'B11', 'B4']
+        },
+        'Swir2, Nir, Green' : {
+            'landsat_7': ['B7', 'B4', 'B2'], 
+            'landsat_5': ['B7', 'B4', 'B2'],
+            'landsat_8': ['B7', 'B5', 'B3'],
+            'sentinel_2': ['B12', 'B8', 'B3']
+        }
     }
     
     return bands
@@ -147,18 +141,6 @@ def landsatVizParam(bands, buffer, image):
         'scale': 30
     })
     
-    #viz_max = max(
-    #    params.get('{}_p95'.format(bands[0])).getInfo(), 
-    #    params.get('{}_p95'.format(bands[1])).getInfo(), 
-    #    params.get('{}_p95'.format(bands[2])).getInfo()
-    #)
-    #
-    #viz_min = min(
-    #    params.get('{}_p5'.format(bands[0])).getInfo(),
-    #    params.get('{}_p5'.format(bands[1])).getInfo(),
-    #    params.get('{}_p5'.format(bands[2])).getInfo()
-    #)
-    
     return {
         'min': [
             params.get('{}_p5'.format(bands[0])).getInfo(),
@@ -173,10 +155,10 @@ def landsatVizParam(bands, buffer, image):
         'bands': bands
     }
 
-def getCloudMask(bandId):
+def getCloudMask(satelliteId):
     """ return the cloud masking function adapted to the apropriate satellite"""
     
-    if bandId in [0, 1]:
+    if satelliteId in ['landsat_5', 'landsat_7']:
         def cloudMask(image):
             qa = image.select('pixel_qa')
             # If the cloud bit (5) is set and the cloud confidence (7) is high
@@ -186,7 +168,7 @@ def getCloudMask(bandId):
             mask2 = image.mask().reduce(ee.Reducer.min())
             
             return image.updateMask(cloud.Not()).updateMask(mask2)
-    elif bandId == 2:
+    elif satelliteId == 'landsat_8':
         def cloudMask(image):
             # Bits 3 and 5 are cloud shadow and cloud, respectively.
             cloudShadowBitMask = (1 << 3);
