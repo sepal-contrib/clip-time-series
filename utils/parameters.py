@@ -1,6 +1,9 @@
 #hard coded parameters
 import os
 import glob
+import ee
+
+ee.Initialize()
 
 
 
@@ -36,10 +39,10 @@ def getPositionPdf(i):
 
 def getSatelites(year):
     """return dataset name and integer for the bands"""
-    if year < 2012:
-        dataset = 'LANDSAT/LT05/C01/T1_SR'
-        bandId = 1
-    elif year == 2012:
+    #if year < 2012:
+    #    dataset = 'LANDSAT/LT05/C01/T1_SR'
+    #    bandId = 1
+    if year <= 2012:
         dataset = 'LANDSAT/LE07/C01/T1_SR'
         bandId = 0
     elif year > 2012:
@@ -110,17 +113,63 @@ def getTxt():
     
     return raw_list
 
-def sentinelVizParam(bands):
+def sentinelVizParam(bands, buffer, image):
+    
+    params = image.select(bands).reduceRegion(**{
+        'reducer': ee.Reducer.percentile([5, 95]), 
+        'geometry': buffer, 
+        'scale': Map.getScale(),
+    })
+    
+    viz_max = max(
+        params.get('{}_p95'.format(bands[0])).getInfo(), 
+        params.get('{}_p95'.format(bands[1])).getInfo(), 
+        params.get('{}_p95'.format(bands[2])).getInfo()
+    )
+
+    viz_min = Math.min(
+        params.get('{}_p5'.format(bands[0])).getInfo(),
+        params.get('{}_p5'.format(bands[1])).getInfo(),
+        params.get('{}_p5'.format(bands[2])).getInfo()
+    )
+    
     return {
-        'min': 0.0,
-        'max': 0.3,
+        'min': viz_min,
+        'max': viz_max,
         'bands': bands
     }
 
-def landsatVizParam(bands):
+def landsatVizParam(bands, buffer, image):
+    
+    params = image.select(bands).reduceRegion(**{
+        'reducer': ee.Reducer.percentile([5, 95]), 
+        'geometry': buffer,
+        'scale': 30
+    })
+    
+    viz_max = max(
+        params.get('{}_p95'.format(bands[0])).getInfo(), 
+        params.get('{}_p95'.format(bands[1])).getInfo(), 
+        params.get('{}_p95'.format(bands[2])).getInfo()
+    )
+
+    viz_min = min(
+        params.get('{}_p5'.format(bands[0])).getInfo(),
+        params.get('{}_p5'.format(bands[1])).getInfo(),
+        params.get('{}_p5'.format(bands[2])).getInfo()
+    )
+    
     return {
-        'min': 0,
-        'max': 3000,
+        'min': [
+            params.get('{}_p5'.format(bands[0])).getInfo(),
+            params.get('{}_p5'.format(bands[1])).getInfo(),
+            params.get('{}_p5'.format(bands[2])).getInfo()
+        ],
+        'max': [
+            params.get('{}_p95'.format(bands[0])).getInfo(), 
+            params.get('{}_p95'.format(bands[1])).getInfo(), 
+            params.get('{}_p95'.format(bands[2])).getInfo()
+        ],
         'bands': bands
     }
 

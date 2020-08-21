@@ -55,7 +55,7 @@ def setLayer(maps, pts, bands, sources):
     geoms = [[pts.loc[pt]['lng'], pts.loc[pt]['lat']] for pt in range(len(pts))]
     ee_pts = [ee.Geometry.Point(geom) for geom in geoms]
     ee_buffers = [ee_pt.buffer(size).bounds() for ee_pt in ee_pts]
-    ee_multiPolygon = ee.Geometry.MultiPolygon(ee_buffers);
+    ee_multiPolygon = ee.Geometry.MultiPolygon(ee_buffers).dissolve(maxError=100)
     
     cpt_map = 0
     ################################################
@@ -67,8 +67,12 @@ def setLayer(maps, pts, bands, sources):
     for year in range(start_year, end_year):
         
         clip, viz_band = getImage(sources, bands, ee_multiPolygon, year)
+        
+        #only compute the stretching on the first image to see the same colors on each year
+        #if year == start_year:
+        viz_params =pm.landsatVizParam(viz_band, ee_multiPolygon, clip)
             
-        maps[cpt_map].addLayer(clip, pm.landsatVizParam(viz_band), 'viz')
+        maps[cpt_map].addLayer(clip, viz_params, 'viz')
             
         cpt_map += 1
             
