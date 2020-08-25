@@ -14,23 +14,27 @@ import os
 
 ee.Initialize()
 
-def getImage(bands, sources, year):
-    
-    #check only for landsats satelites at the moment
-    dataset_source, bandId = pm.getSatelites(year)
-    viz_bands = pm.getAvailableBands()[bands][bandId]
+def getImage(sources, bands, mask, year):
     
     start = str(year) + '-01-01'
     end = str(year) + '-12-31'
     
-    dataset = ee.ImageCollection(dataset_source)
-    dataset = dataset.filterDate(start, end).median()
-    select = dataset.select(viz_bands)
+    #priority selector for satellites
+    for satteliteID in pm.getSatelites():
+        dataset = ee.ImageCollection(pm.getSatelites()[satteliteID]) \
+            .filterDate(start, end) \
+            .filterBounds(mask) \
+            .map(pm.getCloudMask(satteliteID))
+        
+        if dataset.size().getInfo() > 0:
+            break
+            
+    clip = dataset.median().clip(mask)
     
-    return select
+    return clip
     
 
-def run(file, bands, sources, output):
+def run(file, pts, bands, sources, output):
     
     start_year = 2005
     end_year = 2020
@@ -50,27 +54,24 @@ def run(file, bands, sources, output):
     #start the drive handler 
     drive_handler = gdrive.gdrive()
     
-    #read the points 
-    pts = pd.read_csv(file)
-    
     #transform them in ee points 
     ee_pts = [ee.Geometry.Point(pts.loc[i]['lng'], pts.loc[i]['lat']) for i in range(len(pts))]
     
     #create the buffers 
-    buffers = [ee_pt.buffer(2000) for ee_pt in ee_pts]
+    buffers = [ee_pt.buffer(2000).bounds() for ee_pt in ee_pts]
     
     #create a filename list 
     descriptions = {}
     for index, row in pts.iterrows():
         descriptions[index] = {}
         for year in range(start_year, end_year):
-            descriptions[index][year] = '{}_pt_{}_{}_{}'.format(filename, index, name_bands, year)
+            descriptions[index][year] = '{}_pt_{}_{}_{}'.format(filename, int(row['id']), name_bands, year)
     
     #load all the data in gdrive 
     for index, row in pts.iterrows():
         for year in range(start_year, end_year):
             
-            image = getImage(bands, sources, year)
+            image = getImage(sources, bands, buffers[index], year)
             
             task_config = {
                 'image':image,
@@ -81,7 +82,7 @@ def run(file, bands, sources, output):
             
             task = ee.batch.Export.image.toDrive(**task_config)
             task.start()
-            su.displayIO(output, 'exporting pt: {} for year: {}'.format(index, year))
+            su.displayIO(output, 'exporting pt: {} for year: {}'.format(int(row['id']), year))
     
     #check the exportation evolution 
     task_list = []
@@ -112,7 +113,7 @@ def run(file, bands, sources, output):
             page_title = "Pt_{} (lat:{:.5f}, lng:{:.5f})".format(index+1, row['lat'], row['lng'])
             su.displayIO(output, 'Creating page for pt {}'.format(index))
             fig, axes = plt.subplots(3, 5, figsize=(11.69,8.27))
-            fig.suptitle(page_title, fontsize=16)
+            fig.suptitle(page_title, fontsize=16, fontweight ="bold")
             
             #display the images in a fig and export it as a pdf page
             for year in range(start_year, end_year):
@@ -122,7 +123,13 @@ def run(file, bands, sources, output):
                 with rio.open(file) as f:
                     data = f.read([1, 2, 3], masked=True)
                 
-                data = data/3000
+                min_ = np.percentile(data, 5, axis=(1,2))
+                max_ = np.percentile(data, 95, axis=(1,2))
+                
+                max_ = np.expand_dims(np.expand_dims(max_, axis=1), axis=2)
+                min_ = np.expand_dims(np.expand_dims(min_, axis=1), axis=2)
+                
+                data = (data-min_)/(max_-min_)
                 data = data.clip(0, 1)
                 data = np.transpose(data,[1,2,0])
             
@@ -131,9 +138,13 @@ def run(file, bands, sources, output):
                 ax.imshow(data)
                 ax.set_title(str(year))
                 ax.axis('off')
+                ax.set_aspect('equal', 'box')
+            
                 
                 #delete the tmp file ( TODO maybe only flush it once)
-                os.remove(file)
+                #os.remove(file)
+                
+            plt.tight_layout()
             
             #save the page 
             pdf.savefig(fig)
