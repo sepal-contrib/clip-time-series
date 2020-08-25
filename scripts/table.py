@@ -25,10 +25,8 @@ def isConform(file):
     #validate
     return 0
 
-def setMap(file, m):
+def setMap(pts, m):
     """create a map and a df list of points"""
-    
-    pts = pd.read_csv(file)
     
     #add the pts on the map
     markers, popups = [], []
@@ -41,4 +39,4 @@ def setMap(file, m):
     marker_cluster = geemap.MarkerCluster(markers=tuple(markers), popups=popups)
     m.add_layer(marker_cluster)
 
-    return pts
+    return 

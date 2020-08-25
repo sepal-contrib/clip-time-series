@@ -16,6 +16,9 @@ COL_LNG = "select the Longitude column"
 COL_LAT = "Select the latitude column"
 COL_ID = "select the id column"
 READ_COLUMNS = "The dropdown have been updated with the header of your file : [{}]"
+MISSING_INPUT = "One of the column is unknown"
+VALID_COLUMNS = 'Your columns have been validated'
+REPEATED_INPUT = 'One of the input have been repeated. Each column must be different'
 
 
 ##################################
