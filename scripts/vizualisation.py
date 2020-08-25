@@ -4,6 +4,7 @@ import shapely.geometry as sg
 import geopandas as gpd
 import ee 
 from utils import parameters as pm
+from sepal_ui.scripts import utils as su
 
 ee.Initialize()
 
@@ -56,8 +57,9 @@ def setVizMap():
     
     return m
 
-def setLayer(maps, pts, bands, sources):
+def setLayer(maps, pts, bands, sources, output):
     
+    su.displayIO(output, 'create buffers')
     size = 2000  # 2km
     geoms = [[pts.loc[pt]['lng'], pts.loc[pt]['lat']] for pt in range(len(pts))]
     ee_pts = [ee.Geometry.Point(geom) for geom in geoms]
@@ -73,12 +75,14 @@ def setLayer(maps, pts, bands, sources):
     
     for year in range(start_year, end_year):
         
+        su.displayIO(output, 'load {} images'.format(year))
         clip, viz_band = getImage(sources, bands, ee_multiPolygon, year)
         
-        #only compute the stretching on the first image to see the same colors on each year
-        #if year == start_year:
+        #stretch colors
+        su.displayIO(output, 'strectch colors for {}'.format(year))
         viz_params =pm.landsatVizParam(viz_band, ee_multiPolygon, clip)
             
+        su.displayIO(output, 'display {}'.format(year))
         maps[cpt_map].addLayer(clip, viz_params, 'viz')
             
         cpt_map += 1
