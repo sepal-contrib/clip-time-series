@@ -71,17 +71,17 @@ def run(file, pts, bands, sources, output):
     for index, row in pts.iterrows():
         for year in range(start_year, end_year):
             
-            image = getImage(sources, bands, buffers[index], year)
+            #image = getImage(sources, bands, buffers[index], year)
             
-            task_config = {
-                'image':image,
-                'description': descriptions[index][year],
-                'scale': 30,
-                'region': buffers[index]
-            }
+            #task_config = {
+            #    'image':image,
+            #    'description': descriptions[index][year],
+            #    'scale': 30,
+            #    'region': buffers[index]
+            #}
             
-            task = ee.batch.Export.image.toDrive(**task_config)
-            task.start()
+            #task = ee.batch.Export.image.toDrive(**task_config)
+            #task.start()
             su.displayIO(output, 'exporting pt: {} for year: {}'.format(int(row['id']), year))
     
     #check the exportation evolution 
@@ -90,7 +90,7 @@ def run(file, pts, bands, sources, output):
         for year in range(start_year, end_year):
             task_list.append(descriptions[index][year])
             
-    state = utils.custom_wait_for_completion(task_list, output)
+    #state = utils.custom_wait_for_completion(task_list, output)
     su.displayIO(output, 'Export to drive finished', 'success')
     time.sleep(2)
     
@@ -103,7 +103,7 @@ def run(file, pts, bands, sources, output):
     #download the files        
     drive_handler.download_files(filesId, pm.getTmpDir())     
     #remove the files from gdrive 
-    drive_handler.delete_files(filesId)
+    #drive_handler.delete_files(filesId)
     
     #create the resulting pdf
     with PdfPages(pdf_file) as pdf:
