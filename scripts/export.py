@@ -11,6 +11,8 @@ import matplotlib.pyplot as plt
 import rasterio as rio
 import numpy as np
 import os
+import gdal
+import shutil
 
 ee.Initialize()
 
@@ -58,69 +60,96 @@ def run(file, pts, bands, sources, output):
     ee_pts = [ee.Geometry.Point(pts.loc[i]['lng'], pts.loc[i]['lat']) for i in range(len(pts))]
     
     #create the buffers 
-    buffers = [ee_pt.buffer(2000).bounds() for ee_pt in ee_pts]
+    ee_buffers = [ee_pt.buffer(2000).bounds() for ee_pt in ee_pts]
+    
+    #create a multipolygon mask 
+    ee_multiPolygon = ee.Geometry.MultiPolygon(ee_buffers).dissolve(maxError=100)
     
     #create a filename list 
     descriptions = {}
-    for index, row in pts.iterrows():
-        descriptions[index] = {}
-        for year in range(start_year, end_year):
-            descriptions[index][year] = '{}_pt_{}_{}_{}'.format(filename, int(row['id']), name_bands, year)
+    for year in range(start_year, end_year):
+        descriptions[year] = '{}_{}_{}'.format(filename, name_bands, year)
     
     #load all the data in gdrive 
-    for index, row in pts.iterrows():
-        for year in range(start_year, end_year):
+    for year in range(start_year, end_year):
             
-            #image = getImage(sources, bands, buffers[index], year)
+        image = getImage(sources, bands, ee_multiPolygon, year)
+        
+        task_config = {
+            'image':image,
+            'description': descriptions[year],
+            'scale': 30,
+            'region': ee_multiPolygon
+        }
             
-            #task_config = {
-            #    'image':image,
-            #    'description': descriptions[index][year],
-            #    'scale': 30,
-            #    'region': buffers[index]
-            #}
-            
-            #task = ee.batch.Export.image.toDrive(**task_config)
-            #task.start()
-            su.displayIO(output, 'exporting pt: {} for year: {}'.format(int(row['id']), year))
+        task = ee.batch.Export.image.toDrive(**task_config)
+        task.start()
+        su.displayIO(output, 'exporting year: {}'.format(year))
     
     #check the exportation evolution 
     task_list = []
-    for index, row in pts.iterrows():
-        for year in range(start_year, end_year):
-            task_list.append(descriptions[index][year])
+    for year in range(start_year, end_year):
+        task_list.append(descriptions[year])
             
-    #state = utils.custom_wait_for_completion(task_list, output)
+    state = utils.custom_wait_for_completion(task_list, output)
     su.displayIO(output, 'Export to drive finished', 'success')
     time.sleep(2)
     
     su.displayIO(output, 'Retreive to sepal')
     #retreive all the file ids 
     filesId = []
-    for index, row in pts.iterrows():
-        for year in range(start_year, end_year):
-            filesId += drive_handler.get_files(descriptions[index][year])
+    for year in range(start_year, end_year):
+        filesId += drive_handler.get_files(descriptions[year])
+    
     #download the files        
     drive_handler.download_files(filesId, pm.getTmpDir())     
+    
     #remove the files from gdrive 
-    #drive_handler.delete_files(filesId)
+    drive_handler.delete_files(filesId)
     
     #create the resulting pdf
     with PdfPages(pdf_file) as pdf:
         #each point is display on one single page
         for index, row in pts.iterrows():
             
-            page_title = "Pt_{} (lat:{:.5f}, lng:{:.5f})".format(index+1, row['lat'], row['lng'])
-            su.displayIO(output, 'Creating page for pt {}'.format(index))
+            page_title = "Pt_{} (lat:{:.5f}, lng:{:.5f})".format(
+                int(row['id']), 
+                row['lat'], 
+                row['lng']
+            )
+            
+            su.displayIO(output, 'Creating page for pt {}'.format(int(row['id'])))
+                  
             fig, axes = plt.subplots(3, 5, figsize=(11.69,8.27))
             fig.suptitle(page_title, fontsize=16, fontweight ="bold")
             
             #display the images in a fig and export it as a pdf page
             for year in range(start_year, end_year):
                 
-                file = pm.getTmpDir() + descriptions[index][year] + '.tif'
+                #laod the file 
+                file = pm.getTmpDir() + descriptions[year] + '.tif'
+                
+                #create the tmp tif image cuted to buffer size
+                tmp_file = pm.getTmpDir() + descriptions[year] + '_pt_{}.tif'.format(row['id'])
+                
+                #extract the buffer bounds 
+                listCoords = ee.Array.cat(ee_buffers[index].coordinates(), 1) 
+                
+                xCoords = listCoords.slice(1, 0, 1)
+                yCoords = listCoords.slice(1, 1, 2)
+                
+                xMin = xCoords.reduce('min', [0]).get([0,0]).getInfo()
+                xMax = xCoords.reduce('max', [0]).get([0,0]).getInfo()
+                yMin = yCoords.reduce('min', [0]).get([0,0]).getInfo()
+                yMax = yCoords.reduce('max', [0]).get([0,0]).getInfo()
+                
+                bounds = (xMin, yMin, xMax, yMax)
+                
+                #crop the image
+                gdal.Warp(tmp_file, file, outputBounds=bounds)
+                
     
-                with rio.open(file) as f:
+                with rio.open(tmp_file) as f:
                     data = f.read([1, 2, 3], masked=True)
                 
                 min_ = np.percentile(data, 5, axis=(1,2))
@@ -136,19 +165,25 @@ def run(file, pts, bands, sources, output):
                 i = year - start_year
                 ax = axes[pm.getPositionPdf(i)[0], pm.getPositionPdf(i)[1]]
                 ax.imshow(data)
+                if year == 2018:
+                    plt.imsave(page_title + '.png', data)
                 ax.set_title(str(year))
                 ax.axis('off')
                 ax.set_aspect('equal', 'box')
             
                 
-                #delete the tmp file ( TODO maybe only flush it once)
-                #os.remove(file)
+                #delete the tmp file
+                #done on the fly to not exceed sepal memory limits
+                os.remove(tmp_file)
                 
             plt.tight_layout()
             
             #save the page 
             pdf.savefig(fig)
             plt.close()
+            
+    #flush the tmp repository 
+    shutil.rmtree(pm.getTmpDir())
     
     su.displayIO(output, 'PDF output finished', 'success')
     

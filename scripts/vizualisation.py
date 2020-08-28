@@ -80,41 +80,12 @@ def setLayer(maps, pts, bands, sources, output):
         
         #stretch colors
         su.displayIO(output, 'strectch colors for {}'.format(year))
-        viz_params =pm.landsatVizParam(viz_band, ee_multiPolygon, clip)
+        viz_params =pm.vizParam(viz_band, ee_multiPolygon, clip)
             
         su.displayIO(output, 'display {}'.format(year))
         maps[cpt_map].addLayer(clip, viz_params, 'viz')
             
         cpt_map += 1
-            
-#    ################################################
-#    ##     create the layers from 2016 to 2019    ##
-#    ################################################
-#    start_year = 2016
-#    end_year = 2020
-#    
-#    for year in range(start_year, end_year):
-#        start = str(year) + '-01-01';
-#        end = str(year) + '-12-31';
-#        
-#        if 'sentinel 2' in sources:
-#            dataset_source = pm.getSources()['sentinel 2']
-#            viz_band = pm.getAvailableBands()[bands][1]
-#            
-#            dataset = ee.ImageCollection(dataset_source).filterDate(start, end) #.filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE',20))
-#            clip = dataset.median().clip(buffer)
-#            
-#            maps[cpt_map].addLayer(clip, pm.sentinelVizParam(viz_band), 'viz')
-#        else:
-#            dataset_source = pm.getSources()['landsat 7']
-#            viz_band = pm.getAvailableBands()[bands][0]
-#            
-#            dataset = ee.ImageCollection(dataset_source).filterDate(start, end)
-#            clip = dataset.median().clip(ee_multiPolygon)
-#            
-#            maps[cpt_map].addLayer(clip, pm.landsatVizParam(viz_band), 'viz')
-#    
-#        cpt_map += 1
         
     return
     

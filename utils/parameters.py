@@ -37,6 +37,7 @@ def getPositionPdf(i):
 
 def getSatelites():
     return {
+        'sentinel_2': 'COPERNICUS/S2_SR',
         'landsat_8': 'LANDSAT/LC08/C01/T1_SR',
         'landsat_5': 'LANDSAT/LT05/C01/T1_SR',
         'landsat_7': 'LANDSAT/LE07/C01/T1_SR',
@@ -105,12 +106,12 @@ def getTxt():
     
     return raw_list
 
-def sentinelVizParam(bands, buffer, image):
+def vizParam(bands, buffer, image):
     
     params = image.select(bands).reduceRegion(**{
         'reducer': ee.Reducer.percentile([5, 95]), 
         'geometry': buffer, 
-        'scale': Map.getScale(),
+        'scale': 30
     })
     
     viz_max = max(
@@ -119,7 +120,7 @@ def sentinelVizParam(bands, buffer, image):
         params.get('{}_p95'.format(bands[2])).getInfo()
     )
 
-    viz_min = Math.min(
+    viz_min = min(
         params.get('{}_p5'.format(bands[0])).getInfo(),
         params.get('{}_p5'.format(bands[1])).getInfo(),
         params.get('{}_p5'.format(bands[2])).getInfo()
@@ -128,28 +129,6 @@ def sentinelVizParam(bands, buffer, image):
     return {
         'min': viz_min,
         'max': viz_max,
-        'bands': bands
-    }
-
-def landsatVizParam(bands, buffer, image):
-    
-    params = image.select(bands).reduceRegion(**{
-        'reducer': ee.Reducer.percentile([5, 95]), 
-        'geometry': buffer,
-        'scale': 30
-    })
-    
-    return {
-        'min': [
-            params.get('{}_p5'.format(bands[0])).getInfo(),
-            params.get('{}_p5'.format(bands[1])).getInfo(),
-            params.get('{}_p5'.format(bands[2])).getInfo()
-        ],
-        'max': [
-            params.get('{}_p95'.format(bands[0])).getInfo(), 
-            params.get('{}_p95'.format(bands[1])).getInfo(), 
-            params.get('{}_p95'.format(bands[2])).getInfo()
-        ],
         'bands': bands
     }
 
@@ -169,14 +148,24 @@ def getCloudMask(satelliteId):
     elif satelliteId == 'landsat_8':
         def cloudMask(image):
             # Bits 3 and 5 are cloud shadow and cloud, respectively.
-            cloudShadowBitMask = (1 << 3);
-            cloudsBitMask = (1 << 5);
+            cloudShadowBitMask = (1 << 3)
+            cloudsBitMask = (1 << 5)
             # Get the pixel QA band.
-            qa = image.select('pixel_qa');
+            qa = image.select('pixel_qa')
             # Both flags should be set to zero, indicating clear conditions.
-            mask = qa.bitwiseAnd(cloudShadowBitMask).eq(0).And(qa.bitwiseAnd(cloudsBitMask).eq(0));
+            mask = qa.bitwiseAnd(cloudShadowBitMask).eq(0).And(qa.bitwiseAnd(cloudsBitMask).eq(0))
             
             return image.updateMask(mask)
+    elif satelliteId == 'sentinel_2':
+        def cloudMask(image):
+            qa = image.select('QA60')
+            #Bits 10 and 11 are clouds and cirrus, respectively.
+            cloudBitMask = (1 << 10)
+            cirrusBitMask = (1 << 11)
+            #Both flags should be set to zero, indicating clear conditions.
+            mask = qa.bitwiseAnd(cloudBitMask).eq(0).And(qa.bitwiseAnd(cirrusBitMask).eq(0))
+
+            return image.updateMask(mask).divide(10000)
     
     return cloudMask
 
