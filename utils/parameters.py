@@ -35,13 +35,21 @@ def getPositionPdf(i):
 ##       function       ##
 ##########################
 
-def getSatelites():
-    return {
-        'sentinel_2': 'COPERNICUS/S2_SR',
-        'landsat_8': 'LANDSAT/LC08/C01/T1_SR',
-        'landsat_5': 'LANDSAT/LT05/C01/T1_SR',
-        'landsat_7': 'LANDSAT/LE07/C01/T1_SR',
-    }
+def getSatelites(sources):
+    
+    satelites = {}
+    
+    if 'sentinel' in sources:
+        satelites.update({'sentinel_2': 'COPERNICUS/S2_SR'})
+        
+    if 'landsat' in sources:
+        satelites.update({
+            'landsat_8': 'LANDSAT/LC08/C01/T1_SR',
+            'landsat_5': 'LANDSAT/LT05/C01/T1_SR',
+            'landsat_7': 'LANDSAT/LE07/C01/T1_SR',
+        })
+        
+    return satelites
         
 
 def getAvailableBands():
@@ -95,8 +103,8 @@ def getAvailableBands():
 def getSources():
     
     return [
-        'landsat'
-        #'sentinel'
+        'landsat',
+        'sentinel'
     ]
 
 def getTxt():
@@ -107,6 +115,9 @@ def getTxt():
     return raw_list
 
 def vizParam(bands, buffer, image):
+    
+    if not bands: #didn't find images for the sample
+        return {}
     
     params = image.select(bands).reduceRegion(**{
         'reducer': ee.Reducer.percentile([5, 95]), 
@@ -127,8 +138,16 @@ def vizParam(bands, buffer, image):
     )
     
     return {
-        'min': viz_min,
-        'max': viz_max,
+        'min': [
+            params.get('{}_p5'.format(bands[0])).getInfo(), 
+            params.get('{}_p5'.format(bands[1])).getInfo(), 
+            params.get('{}_p5'.format(bands[2])).getInfo()
+        ],
+        'max': [
+            params.get('{}_p95'.format(bands[0])).getInfo(), 
+            params.get('{}_p95'.format(bands[1])).getInfo(), 
+            params.get('{}_p95'.format(bands[2])).getInfo()
+        ],
         'bands': bands
     }
 
