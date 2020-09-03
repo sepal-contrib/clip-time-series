@@ -135,15 +135,11 @@ def run(file, pts, bands, sources, output):
                 tmp_file = pm.getTmpDir() + descriptions[year] + '_pt_{}.tif'.format(row['id'])
                 
                 #extract the buffer bounds 
-                listCoords = ee.Array.cat(ee_buffers[index].coordinates(), 1) 
-                
-                xCoords = listCoords.slice(1, 0, 1)
-                yCoords = listCoords.slice(1, 1, 2)
-                
-                xMin = xCoords.reduce('min', [0]).get([0,0]).getInfo()
-                xMax = xCoords.reduce('max', [0]).get([0,0]).getInfo()
-                yMin = yCoords.reduce('min', [0]).get([0,0]).getInfo()
-                yMax = yCoords.reduce('max', [0]).get([0,0]).getInfo()
+                coords = ee_buffers[index].coordinates().get(0).getInfo()
+                ll, ur = coords[0], coords[2]
+
+                # Get the bounding box
+                xMin, yMin, xMax, yMax = ll[0], ll[1], ur[0], ur[1]
                 
                 bounds = (xMin, yMin, xMax, yMax)
                 
