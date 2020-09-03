@@ -167,8 +167,6 @@ def run(file, pts, bands, sources, output):
                 i = year - start_year
                 ax = axes[pm.getPositionPdf(i)[0], pm.getPositionPdf(i)[1]]
                 ax.imshow(data)
-                if year == 2018:
-                    plt.imsave(page_title + '.png', data)
                 ax.set_title(str(year) + ' ' + satelites[year])
                 ax.axis('off')
                 ax.set_aspect('equal', 'box')
