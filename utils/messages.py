@@ -34,6 +34,7 @@ NO_PTS = "No points of observation are registered. Please go back to step 1"
 NO_BANDS = "Please provide a the bands you want to observe on your images"
 NO_SOURCES = "please provide the satellite sources"
 SENTINEL_DISABLED = "The processing of the sentinel 2 images provide lots of blanks areas at the moment. we strongly suggest to only use landsat 7 images"
+VIZ_DISCLAIMER = "The bands displayed in this preview have not been stretched. The exporting process will vastly improve the contrats"
 
 ##################################
 ##         Exports              ##
