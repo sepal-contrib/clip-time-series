@@ -13,24 +13,26 @@ def getImage(sources, bands, mask, year):
     start = str(year) + '-01-01'
     end = str(year) + '-12-31'
     
+    satelite = None
     #priority selector for satellites
-    for satteliteID in pm.getSatelites(sources):
-        dataset = ee.ImageCollection(pm.getSatelites(sources)[satteliteID]) \
+    for sateliteId in pm.getSatelites(sources):
+        dataset = ee.ImageCollection(pm.getSatelites(sources)[sateliteId]) \
             .filterDate(start, end) \
             .filterBounds(mask) \
-            .map(pm.getCloudMask(satteliteID))
+            .map(pm.getCloudMask(sateliteId))
         
         if dataset.size().getInfo() > 0:
+            satelite = sateliteId
             break
         
     if dataset.size().getInfo():
-        viz_band = pm.getAvailableBands()[bands][satteliteID]
+        viz_band = pm.getAvailableBands()[bands][sateliteId]
         clip = dataset.median().clip(mask)
     else:
         clip = mask
         viz_band = None    
     
-    return (clip, viz_band)
+    return (clip, satelite, viz_band)
     
 
 def setVizMap():
@@ -79,11 +81,11 @@ def setLayer(maps, pts, bands, sources, output):
     for year in range(start_year, end_year):
         
         su.displayIO(output, 'load {} images'.format(year))
-        clip, viz_band = getImage(sources, bands, ee_multiPolygon, year)
+        clip, satelite, viz_band = getImage(sources, bands, ee_multiPolygon, year)
         
         #stretch colors
         su.displayIO(output, 'strectch colors for {}'.format(year))
-        viz_params =pm.vizParam(viz_band, ee_multiPolygon, clip)
+        viz_params =pm.vizParam(viz_band, ee_multiPolygon, clip, satelite)
             
         su.displayIO(output, 'display {}'.format(year))
         maps[cpt_map].addLayer(clip, viz_params, 'viz')
