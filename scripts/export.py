@@ -22,18 +22,19 @@ def getImage(sources, bands, mask, year):
     end = str(year) + '-12-31'
     
     #priority selector for satellites
-    for satteliteID in pm.getSatelites():
-        dataset = ee.ImageCollection(pm.getSatelites()[satteliteID]) \
+    for sateliteId in pm.getSatelites(sources):
+        dataset = ee.ImageCollection(pm.getSatelites(sources)[sateliteId]) \
             .filterDate(start, end) \
             .filterBounds(mask) \
-            .map(pm.getCloudMask(satteliteID))
+            .map(pm.getCloudMask(sateliteId))
         
         if dataset.size().getInfo() > 0:
+            satelite = sateliteId
             break
             
     clip = dataset.median().clip(mask)
     
-    return clip
+    return (clip, sateliteId)
     
 
 def run(file, pts, bands, sources, output):
@@ -71,9 +72,10 @@ def run(file, pts, bands, sources, output):
         descriptions[year] = '{}_{}_{}'.format(filename, name_bands, year)
     
     #load all the data in gdrive 
+    satelites = {} #contain the names of the used satelites
     for year in range(start_year, end_year):
             
-        image = getImage(sources, bands, ee_multiPolygon, year)
+        image, satelites[year] = getImage(sources, bands, ee_multiPolygon, year)
         
         task_config = {
             'image':image,
@@ -155,8 +157,8 @@ def run(file, pts, bands, sources, output):
                 min_ = np.percentile(data, 5, axis=(1,2))
                 max_ = np.percentile(data, 95, axis=(1,2))
                 
-                max_ = np.expand_dims(np.expand_dims(max_, axis=1), axis=2)
                 min_ = np.expand_dims(np.expand_dims(min_, axis=1), axis=2)
+                max_ = np.expand_dims(np.expand_dims(max_, axis=1), axis=2)
                 
                 data = (data-min_)/(max_-min_)
                 data = data.clip(0, 1)
@@ -167,11 +169,10 @@ def run(file, pts, bands, sources, output):
                 ax.imshow(data)
                 if year == 2018:
                     plt.imsave(page_title + '.png', data)
-                ax.set_title(str(year))
+                ax.set_title(str(year) + ' ' + satelites[year])
                 ax.axis('off')
                 ax.set_aspect('equal', 'box')
             
-                
                 #delete the tmp file
                 #done on the fly to not exceed sepal memory limits
                 os.remove(tmp_file)
