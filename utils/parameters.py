@@ -118,15 +118,10 @@ def vizParam(bands, buffer, image, satelite):
     
     if not bands: #didn't find images for the sample
         return {}
-    
-    if satelite in ['sentinel_2']:
-        max_ = 0.3
-    elif satelite in ['landsat_5', 'landsat_7', 'landsat_8']:
-        max_ = 3000
-    
+
     return {
         'min': 0,
-        'max': max_,
+        'max': 3000,
         'bands': bands
     }
 
@@ -162,8 +157,8 @@ def getCloudMask(satelliteId):
             cirrusBitMask = (1 << 11)
             #Both flags should be set to zero, indicating clear conditions.
             mask = qa.bitwiseAnd(cloudBitMask).eq(0).And(qa.bitwiseAnd(cirrusBitMask).eq(0))
-
-            return image.updateMask(mask).divide(10000)
+    
+            return image.updateMask(mask)#.divide(10000)
     
     return cloudMask
 
@@ -173,17 +168,3 @@ def getnbIntervals():
 landsat_start = 2005
 sentinel_start = 2016
 sentinel_end = 2019
-
-#// cloudMask
-#function cloudMask_jrc(im) {
-#  // Opaque and cirrus cloud masks cause bits 10 and 11 in QA60 to be set,
-#  // so values less than 1024 are cloud-free
-#  var cloud1 = ee.Image(0).where(im.select('QA60').gte(1024), 1);//.not();
-#  var cloud2 = ee.Image(0).where(im.select('B2').gte(1200), 1);//.not();
-#  var cloud2b = cloud2.focal_min(200,'circle','meters');
-#  var clouds=((cloud1.eq(1)).or(cloud2b.eq(1))); // compute the n of cloudfree observations
-#
-#   //im = im.updateMask(maskblue2);
-#   im = im.addBands(clouds.eq(0).select([0],["cloudfree"])); // and add a band with this information
-#   return im.updateMask(clouds.eq(0));
-#  }
