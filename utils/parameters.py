@@ -38,23 +38,23 @@ def getPositionPdf(i):
 ##       function       ##
 ##########################
 
-def getSatelites(sources):
+def getSatellites(sources):
     
-    satelites = {}
+    satellites = {}
     
     if 'sentinel' in sources:
-        satelites.update({'sentinel_2': 'COPERNICUS/S2_SR'})
+        satellites.update({'sentinel_2': 'COPERNICUS/S2_SR'})
         
     if 'landsat' in sources:
-        satelites.update({
+        satellites.update({
             'landsat_8': 'LANDSAT/LC08/C01/T1_SR',
             'landsat_5': 'LANDSAT/LT05/C01/T1_SR',
             'landsat_7': 'LANDSAT/LE07/C01/T1_SR',
         })
         
-    return satelites
+    return satellites
 
-def getShortname(satelite):
+def getShortname(satellite):
     short = {
         'sentinel_2': 'S2',
         'landsat_5': 'L5', 
@@ -62,7 +62,7 @@ def getShortname(satelite):
         'landsat_8': 'L8'
     }
     
-    return short[satelite]
+    return short[satellite]
         
 
 def getAvailableBands():
@@ -108,6 +108,18 @@ def getAvailableBands():
             'landsat_5': ['B7', 'B4', 'B2'],
             'landsat_8': ['B7', 'B5', 'B3'],
             'sentinel_2': ['B12', 'B8', 'B3']
+        },
+        'ndvi' : { #2 useful bands nir and red 
+            'landsat_7': ['B4', 'B3'], 
+            'landsat_5': ['B4', 'B3'],
+            'landsat_8': ['B5', 'B4'],
+            'sentinel_2': ['B8', 'B4']
+        },
+        'ndwi' : { #2 useful bands nir and swir 
+            'landsat_7': ['B4', 'B5'], 
+            'landsat_5': ['B4', 'B5'],
+            'landsat_8': ['B5', 'B6'],
+            'sentinel_2': ['B8', 'B11']
         }
     }
     
@@ -127,7 +139,7 @@ def getTxt():
     
     return raw_list
 
-def vizParam(bands, buffer, image, satelite):
+def vizParam(bands, buffer, image, satellite):
     
     if not bands: #didn't find images for the sample
         return {}
