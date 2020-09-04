@@ -52,6 +52,7 @@ def run(file, pts, bands, sources, output):
     pdf_file = pm.getResultDir() + '{}_{}.pdf'.format(filename, name_bands)
     
     if os.path.isfile(pdf_file):
+        su.displayIO(output, 'Pdf already exist', 'success')
         return pdf_file
     
     #start the drive handler 
@@ -122,7 +123,7 @@ def run(file, pts, bands, sources, output):
             
             su.displayIO(output, 'Creating page for pt {}'.format(int(row['id'])))
                   
-            fig, axes = plt.subplots(3, 5, figsize=(11.69,8.27))
+            fig, axes = plt.subplots(3, 5, figsize=(11.69,8.27), dpi=500)
             fig.suptitle(page_title, fontsize=16, fontweight ="bold")
             
             #display the images in a fig and export it as a pdf page
@@ -162,7 +163,7 @@ def run(file, pts, bands, sources, output):
             
                 i = year - start_year
                 ax = axes[pm.getPositionPdf(i)[0], pm.getPositionPdf(i)[1]]
-                ax.imshow(data)
+                ax.imshow(data, interpolation='nearest')
                 ax.set_title(str(year) + ' ' + satelites[year])
                 ax.axis('off')
                 ax.set_aspect('equal', 'box')
