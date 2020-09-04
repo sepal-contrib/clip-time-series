@@ -161,7 +161,7 @@ def run(file, pts, bands, sources, output):
                 i = year - pm.start_year
                 ax = axes[pm.getPositionPdf(i)[0], pm.getPositionPdf(i)[1]]
                 ax.imshow(data, interpolation='nearest')
-                ax.set_title(str(year) + ' ' + pm.getShortname(satelites[year]), x=.0, y=.85, fontsize='small', backgroundcolor='white', ha='left')
+                ax.set_title(str(year) + ' ' + pm.getShortname(satelites[year]), x=.0, y=.9, fontsize='small', backgroundcolor='white', ha='left')
                 ax.axis('off')
                 ax.set_aspect('equal', 'box')
             
