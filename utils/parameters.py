@@ -26,10 +26,13 @@ def getTmpDir():
 ##      constant        ##
 ##########################
 
-def getPositionPdf(i):   
-    positionsRow = [[int(i/5), i%5] for i in range(15)]
-    
-    return positionsRow[i]
+start_year = 2005
+end_year = 2020 #when changing check that the number of line and column is still adapted
+nb_line = 4
+nb_col = 5
+
+def getPositionPdf(i):       
+    return [int(i/5), i%5]
 
 ##########################
 ##       function       ##

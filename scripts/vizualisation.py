@@ -75,10 +75,8 @@ def setLayer(maps, pts, bands, sources, output):
     ################################################
     ##     create the layers from 2005 to 2020    ##
     ################################################
-    start_year = 2005
-    end_year = 2020
     
-    for year in range(start_year, end_year):
+    for year in range(pm.start_year, pm.end_year + 1):
         
         su.displayIO(output, 'load {} images'.format(year))
         clip, satelite, viz_band = getImage(sources, bands, ee_multiPolygon, year)
