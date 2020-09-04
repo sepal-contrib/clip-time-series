@@ -50,6 +50,16 @@ def getSatelites(sources):
         })
         
     return satelites
+
+def getShortname(satelite):
+    short = {
+        'sentinel_2': 'S2',
+        'landsat_5': 'L5', 
+        'landsat_7': 'L7',
+        'landsat_8': 'L8'
+    }
+    
+    return short[satelite]
         
 
 def getAvailableBands():
