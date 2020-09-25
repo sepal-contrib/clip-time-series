@@ -1,18 +1,19 @@
-import pandas as pd
-from utils import gdrive
-from utils import utils
-import ee 
+import shutil
+import os
 from pathlib import Path
-from sepal_ui.scripts import utils as su
-from matplotlib.backends.backend_pdf import PdfPages
-from utils import parameters as pm
 import time
+
+import pandas as pd
+import ee 
+from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
 import rasterio as rio
 import numpy as np
-import os
 import gdal
-import shutil
+
+from utils import gdrive
+from utils import utils
+from utils import parameters as pm
 
 ee.Initialize()
 
@@ -100,7 +101,7 @@ def run(file, pts, bands, sources, output):
     pdf_file = pm.getResultDir() + '{}_{}.pdf'.format(filename, name_bands)
     
     if os.path.isfile(pdf_file):
-        su.displayIO(output, 'Pdf already exist', 'success')
+        output.add_live_msg('Pdf already exist', 'success')
         return pdf_file
     
     #start the drive handler 
@@ -136,7 +137,7 @@ def run(file, pts, bands, sources, output):
             
         task = ee.batch.Export.image.toDrive(**task_config)
         task.start()
-        su.displayIO(output, 'exporting year: {}'.format(year))
+        output.add_live_msg('exporting year: {}'.format(year))
     
     #check the exportation evolution 
     task_list = []
@@ -144,35 +145,38 @@ def run(file, pts, bands, sources, output):
         task_list.append(descriptions[year])
             
     state = utils.custom_wait_for_completion(task_list, output)
-    su.displayIO(output, 'Export to drive finished', 'success')
+    output.add_live_msg('Export to drive finished', 'success')
     time.sleep(2)
     
-    su.displayIO(output, 'Retreive to sepal')
+    output.add_live_msg('Retreive to sepal')
     #retreive all the file ids 
     filesId = []
     for year in range(pm.start_year, pm.end_year + 1):
         filesId += drive_handler.get_files(descriptions[year])
     
-    #download the files        
+    #download the files   
+    output.add_live_msg('Download files')
     drive_handler.download_files(filesId, pm.getTmpDir())     
     
     #remove the files from gdrive 
+    output.add_live_msg('Remove from gdrive')
     drive_handler.delete_files(filesId)
     
     #create the sample buffers
     ee_samples = [ee_pt.buffer(200).bounds() for ee_pt in ee_pts]
     
-    #compute ndvi and ndwi 
-    ndvi = {}
-    ndwi = {}
-    for index, row in pts.iterrows():
-        ndvi[row['id']] = []
-        ndwi[row['id']] = []
-        
-        for year in range(pm.start_year, pm.end_year + 1):
-            #compute the yearlly mean ndvi for the current year 
-            ndvi[row['id']].append(getNDVI(sources, satellites[year], 'ndvi', ee_samples[index], year))
-            ndwi[row['id']].append(getNDWI(sources, satellites[year], 'ndwi', ee_samples[index], year))
+    ##compute ndvi and ndwi 
+    #ndvi = {}
+    #ndwi = {}
+    #output.add_live_msg('compute indices')
+    #for index, row in pts.iterrows():
+    #    ndvi[row['id']] = []
+    #    ndwi[row['id']] = []
+    #    
+    #    for year in range(pm.start_year, pm.end_year + 1):
+    #        #compute the yearlly mean ndvi for the current year 
+    #        ndvi[row['id']].append(getNDVI(sources, satellites[year], 'ndvi', ee_samples[index], year))
+    #        ndwi[row['id']].append(getNDWI(sources, satellites[year], 'ndwi', ee_samples[index], year))
             
     
     #create the resulting pdf
@@ -186,7 +190,7 @@ def run(file, pts, bands, sources, output):
                 row['lng']
             )
             
-            su.displayIO(output, 'Creating pages for pt {}'.format(int(row['id'])))
+            output.add_live_msg('Creating pages for pt {}'.format(int(row['id'])))
                   
             fig, axes = plt.subplots(pm.nb_line, pm.nb_col, figsize=(11.69,8.27), dpi=500)
             fig.suptitle(page_title, fontsize=16, fontweight ="bold")
@@ -216,13 +220,23 @@ def run(file, pts, bands, sources, output):
                 with rio.open(tmp_file) as f:
                     data = f.read([1, 2, 3], masked=True)
                 
-                min_ = np.percentile(data, 5, axis=(1,2))
-                max_ = np.percentile(data, 95, axis=(1,2))
-                
-                min_ = np.expand_dims(np.expand_dims(min_, axis=1), axis=2)
-                max_ = np.expand_dims(np.expand_dims(max_, axis=1), axis=2)
-                
-                data = (data-min_)/(max_-min_)
+                bands = [] 
+                for i in range(3):
+                    band = data[i]
+                    h_, bin_ = np.histogram(band[np.isfinite(band)].flatten(), 3000, density=True) #remove the NaN from the analysis
+    
+                    cdf = h_.cumsum() # cumulative distribution function
+                    cdf = 3000 * cdf / cdf[-1] # normalize
+    
+                    # use linear interpolation of cdf to find new pixel values
+                    band_equalized = np.interp(band.flatten(), bin_[:-1], cdf)
+                    band_equalized = band_equalized.reshape(band.shape)
+        
+                    bands.append(band_equalized)
+    
+                data = np.stack( bands, axis=0 )
+
+                data = data/3000
                 data = data.clip(0, 1)
                 data = np.transpose(data,[1,2,0])
             
@@ -251,28 +265,28 @@ def run(file, pts, bands, sources, output):
             pdf.savefig(fig)
             plt.close()
             
-            #create a second page with ndvi and ndwi
-            years = [year for year in range(pm.start_year, pm.end_year + 1)]
-            fig, (ax_ndvi, ax_ndwi) = plt.subplots(1, 2, figsize=(11.69,8.27))
-            fig.suptitle(page_title, fontsize=16, fontweight ="bold")
-            
-            ax_ndvi.set_title('Anual mean ndvi')
-            ax_ndvi.plot(years, ndvi[row['id']])
-            ax_ndvi.set_ylim(0,1)
-            
-            ax_ndwi.set_title('Anual mean ndwi')
-            ax_ndwi.plot(years, ndwi[row['id']])
-            ax_ndwi.set_ylim(0,1)
-
-            #save the page 
-            plt.tight_layout()
-            pdf.savefig(fig)
-            plt.close()
+            ##create a second page with ndvi and ndwi
+            #years = [year for year in range(pm.start_year, pm.end_year + 1)]
+            #fig, (ax_ndvi, ax_ndwi) = plt.subplots(1, 2, figsize=(11.69,8.27))
+            #fig.suptitle(page_title, fontsize=16, fontweight ="bold")
+            #
+            #ax_ndvi.set_title('Anual mean ndvi')
+            #ax_ndvi.plot(years, ndvi[row['id']])
+            #ax_ndvi.set_ylim(0,1)
+            #
+            #ax_ndwi.set_title('Anual mean ndwi')
+            #ax_ndwi.plot(years, ndwi[row['id']])
+            #ax_ndwi.set_ylim(0,1)
+            #
+            ##save the page 
+            #plt.tight_layout()
+            #pdf.savefig(fig)
+            #plt.close()
             
     #flush the tmp repository 
     shutil.rmtree(pm.getTmpDir())
     
-    su.displayIO(output, 'PDF output finished', 'success')
+    output.add_live_msg('PDF output finished', 'success')
     
     return pdf_file
     

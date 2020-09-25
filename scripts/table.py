@@ -1,8 +1,9 @@
-import pandas as pd 
 import os
-from utils import messages as ms
-from sepal_ui.scripts import mapping
+
+import pandas as pd 
 import geemap
+
+from utils import messages as ms
 
 def isConform(file):
     """perform several checks on the file given by the user retrun an error message if something is wrong else 0"""
@@ -16,11 +17,6 @@ def isConform(file):
         df = pd.read_csv(file)
     except:
         return ms.ERROR_READING_FILE.format(file)
-    
-    #check headers 
-    #headers = ['lat', 'lng']
-    #if not list(df.columns) == headers:
-    #    return ms.WRONG_HEADERS
     
     #validate
     return 0
