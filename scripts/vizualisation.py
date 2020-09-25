@@ -1,96 +1,59 @@
-import geemap
-from ipywidgets import Layout
-import shapely.geometry as sg
-import geopandas as gpd
-import ee 
+import traitlets
 
-from utils import parameters as pm
+import ipyvuetify as v
+from pathlib import Path
+from pyproj import Proj
+from shapely.geometry import shape
 
-ee.Initialize()
-
-def getImage(sources, bands, mask, year):
+def set_msg(pts, bands_combo, source_name, basename):
     
-    start = str(year) + '-01-01'
-    end = str(year) + '-12-31'
+    nb_pts = len(pts)    
     
-    satelite = None
-    #priority selector for satellites
-    for sateliteId in pm.getSatellites(sources):
-        dataset = ee.ImageCollection(pm.getSatellites(sources)[sateliteId]) \
-            .filterDate(start, end) \
-            .filterBounds(mask) \
-            .map(pm.getCloudMask(sateliteId))
-        
-        if dataset.size().getInfo() > 0:
-            satelite = sateliteId
-            break
-        
-    if dataset.size().getInfo():
-        viz_band = pm.getAvailableBands()[bands][sateliteId]
-        clip = dataset.median().clip(mask)
-    else:
-        clip = mask
-        viz_band = None    
+    #compute surface (use total_bounds when pts will be a geopandas)
+    minx = pts['lng'].to_numpy().min()
+    maxx = pts['lng'].to_numpy().max()
+    miny = pts['lat'].to_numpy().min()
+    maxy = pts['lat'].to_numpy().max()
     
-    return (clip, satelite, viz_band)
+    lon = (maxx, maxx, minx, minx)
+    lat = (maxy, miny, miny, maxy)
     
-
-def setVizMap():
+    pa = Proj("ESRI:54009") #equal surface mollweide
+    x, y = pa(lon, lat)
+    cop = {"type": "Polygon", "coordinates": [zip(x, y)]}
+    surface = shape(cop).area/10e6
     
-    center = [0, 0]
-    zoom = 2
-    
-    #create the map
-    m = geemap.Map(center=center, zoom=zoom)
-    
-    #remove everything
-    m.clear_layers()
-    m.clear_controls()
-    
-    #prevent all the handler 
-    m.dragging = False
-    m.keyboard = False
-    m.scroll_wheel_zoom = False
-    m.tap = False
-    m.touch_zoom = False
-    m.zoom_control = False
-    m.double_click_zoom = False
-    
-    #define map size 
-    display = Layout(width='200px', height='200px', padding="1%")
-    m.layout = display
-    
-    return m
-
-def setLayer(maps, pts, bands, sources, output):
-    
-    output.add_live_msg('create buffers')
-    size = 2000  # 2km
-    geoms = [[pts.loc[pt]['lng'], pts.loc[pt]['lat']] for pt in range(len(pts))]
-    ee_pts = [ee.Geometry.Point(geom) for geom in geoms]
-    ee_buffers = [ee_pt.buffer(size).bounds() for ee_pt in ee_pts]
-    ee_multiPolygon = ee.Geometry.MultiPolygon(ee_buffers).dissolve(maxError=100)
-    
-    cpt_map = 0
-    ################################################
-    ##     create the layers from 2005 to 2020    ##
-    ################################################
-    
-    for year in range(pm.start_year, pm.end_year + 1):
-        
-        output.add_live_msg('load {} images'.format(year))
-        clip, satelite, viz_band = getImage(sources, bands, ee_multiPolygon, year)
-        
-        #stretch colors
-        output.add_live_msg('strectch colors for {}'.format(year))
-        viz_params =pm.vizParam(viz_band, ee_multiPolygon, clip, satelite)
+    msg = """
+        <div>
+            <p>
+                You're about to launch the following downloading :
+            <p>
+            <ul>
+                <li>
+                    <b>{}</b> points distributed on <b>{}</b> km\u00B2
+                </li>
+                <li>
+                    Using the images coming from <b>{}</b> satellites
+                <li>
+                    Using the <b>{}</b> band combination
+                </li>
+                <li>
+                    Saved in a file using <b>{}</b> as a basename
+                </li>
+            </ul>
             
-        output.add_live_msg('display {}'.format(year))
-        maps[cpt_map].addLayer(clip, viz_params, 'viz')
-            
-        cpt_map += 1
-        
-    return
+            <p>
+                If you agree with these input you can start the downloading, if not please change the inputs in the previous tiles
+            </p>
+        </div>
+    """.format(nb_pts, surface, source_name, bands_combo, basename)
+    
+    #create a Html widget
+    class MyHTML(v.VuetifyTemplate):
+        template = traitlets.Unicode(msg).tag(sync=True)
+    
+    
+    return MyHTML()
     
     
     
