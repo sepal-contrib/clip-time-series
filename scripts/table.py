@@ -31,8 +31,15 @@ def setMap(pts, m):
         markers.append(marker)
         popups.append(index)
         
+    #remove the previous markers
+    if len(m.layers) > 1: #only 1 layer + cardoDB.Positron
+        m.remove_last_layer()
+        
     #display on the map
     marker_cluster = geemap.MarkerCluster(markers=tuple(markers), popups=popups)
     m.add_layer(marker_cluster)
+    
+    #recenter the map
+    m.set_center(0, 0, zoom=2)
 
     return 
