@@ -30,13 +30,14 @@ start_year = 2005
 end_year = 2020 #when changing check that the number of line and column is still adapted
 nb_line = 4
 nb_col = 5
-
-def getPositionPdf(i):       
-    return [int(i/5), i%5]
+sources = ['landsat', 'sentinel']
 
 ##########################
 ##       function       ##
 ##########################
+def getPositionPdf(i):  
+    """Return the position of the square on the pdf page"""
+    return [int(i/5), i%5]
 
 def getSatellites(sources):
     
@@ -125,13 +126,6 @@ def getAvailableBands():
     
     return bands
 
-def getSources():
-    
-    return [
-        'landsat',
-        'sentinel'
-    ]
-
 def getTxt():
     """get all the txt files available in th folders"""
     root_dir = os.path.expanduser('~')
@@ -186,10 +180,3 @@ def getCloudMask(satelliteId):
             return image.updateMask(mask)#.divide(10000)
     
     return cloudMask
-
-def getnbIntervals():
-    return sentinel_end - landsat_start + 1
-
-landsat_start = 2005
-sentinel_start = 2016
-sentinel_end = 2019

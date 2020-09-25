@@ -3,8 +3,8 @@ from ipywidgets import Layout
 import shapely.geometry as sg
 import geopandas as gpd
 import ee 
+
 from utils import parameters as pm
-from sepal_ui.scripts import utils as su
 
 ee.Initialize()
 
@@ -15,8 +15,8 @@ def getImage(sources, bands, mask, year):
     
     satelite = None
     #priority selector for satellites
-    for sateliteId in pm.getSatelites(sources):
-        dataset = ee.ImageCollection(pm.getSatelites(sources)[sateliteId]) \
+    for sateliteId in pm.getSatellites(sources):
+        dataset = ee.ImageCollection(pm.getSatellites(sources)[sateliteId]) \
             .filterDate(start, end) \
             .filterBounds(mask) \
             .map(pm.getCloudMask(sateliteId))
@@ -64,7 +64,7 @@ def setVizMap():
 
 def setLayer(maps, pts, bands, sources, output):
     
-    su.displayIO(output, 'create buffers')
+    output.add_live_msg('create buffers')
     size = 2000  # 2km
     geoms = [[pts.loc[pt]['lng'], pts.loc[pt]['lat']] for pt in range(len(pts))]
     ee_pts = [ee.Geometry.Point(geom) for geom in geoms]
@@ -78,14 +78,14 @@ def setLayer(maps, pts, bands, sources, output):
     
     for year in range(pm.start_year, pm.end_year + 1):
         
-        su.displayIO(output, 'load {} images'.format(year))
+        output.add_live_msg('load {} images'.format(year))
         clip, satelite, viz_band = getImage(sources, bands, ee_multiPolygon, year)
         
         #stretch colors
-        su.displayIO(output, 'strectch colors for {}'.format(year))
+        output.add_live_msg('strectch colors for {}'.format(year))
         viz_params =pm.vizParam(viz_band, ee_multiPolygon, clip, satelite)
             
-        su.displayIO(output, 'display {}'.format(year))
+        output.add_live_msg('display {}'.format(year))
         maps[cpt_map].addLayer(clip, viz_params, 'viz')
             
         cpt_map += 1
