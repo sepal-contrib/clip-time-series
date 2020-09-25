@@ -11,6 +11,7 @@ import rasterio as rio
 import numpy as np
 import gdal
 
+
 from utils import gdrive
 from utils import utils
 from utils import parameters as pm
@@ -84,7 +85,7 @@ def getImage(sources, bands, mask, year):
             satellite = satelliteId
             break
             
-    clip = dataset.median().clip(mask)
+    clip = dataset.median().clip(mask).select(pm.getAvailableBands()[bands][satelliteId])
     
     return (clip, satelliteId)
     
@@ -132,7 +133,8 @@ def run(file, pts, bands, sources, output):
             'image':image,
             'description': descriptions[year],
             'scale': 30,
-            'region': ee_multiPolygon
+            'region': ee_multiPolygon,
+            'maxPixels': 10e12
         }
             
         task = ee.batch.Export.image.toDrive(**task_config)
@@ -143,7 +145,7 @@ def run(file, pts, bands, sources, output):
     task_list = []
     for year in range(pm.start_year, pm.end_year + 1):
         task_list.append(descriptions[year])
-            
+    
     state = utils.custom_wait_for_completion(task_list, output)
     output.add_live_msg('Export to drive finished', 'success')
     time.sleep(2)

@@ -1,9 +1,8 @@
 from sepal_ui.scripts import gee as gs
-from sepal_ui.scripts import utils as su
 from utils import messages as ms
 import time
 
-def custom_wait_for_completion(task_descripsion, output):
+def custom_wait_for_completion(task_description, output):
     """Wait until the selected process are finished. Display some output information
 
     Args:
@@ -14,11 +13,11 @@ def custom_wait_for_completion(task_descripsion, output):
     """
     state = 'UNSUBMITTED'
     while not (state == 'COMPLETED' or state =='FAILED'):
-        su.displayIO(output, ms.STATUS.format(state))
+        output.add_live_msg(ms.STATUS.format(state))
         time.sleep(5)
                     
         #search for the task in task_list
-        for task in task_descripsion:
+        for task in task_description:
             current_task = gs.isTask(task)
             if current_task:
                 state = current_task.state
