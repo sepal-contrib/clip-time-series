@@ -30,7 +30,7 @@ def set_msg(pts, bands_combo, source_name, basename):
             <p>
             <ul>
                 <li>
-                    <b>{}</b> points distributed on <b>{}</b> km\u00B2
+                    <b>{}</b> points distributed on <b>{:.2f}</b> km\u00B2
                 </li>
                 <li>
                     Using the images coming from <b>{}</b> satellites
