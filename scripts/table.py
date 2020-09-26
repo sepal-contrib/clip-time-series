@@ -27,7 +27,7 @@ def setMap(pts, m):
     #add the pts on the map
     markers, popups = [], []
     for index, row in pts.iterrows():
-        marker = geemap.Marker(location=(row['lat'], row['lng']), draggable=False)
+        marker = geemap.Marker(location=(row.lat, row.lng), draggable=False)
         markers.append(marker)
         popups.append(index)
         

@@ -1,27 +1,15 @@
 import traitlets
 
 import ipyvuetify as v
-from pathlib import Path
-from pyproj import Proj
-from shapely.geometry import shape
 
 def set_msg(pts, bands_combo, source_name, basename):
     
-    nb_pts = len(pts)    
+    nb_pts = len(pts)
     
-    #compute surface (use total_bounds when pts will be a geopandas)
-    minx = pts['lng'].to_numpy().min()
-    maxx = pts['lng'].to_numpy().max()
-    miny = pts['lat'].to_numpy().min()
-    maxy = pts['lat'].to_numpy().max()
-    
-    lon = (maxx, maxx, minx, minx)
-    lat = (maxy, miny, miny, maxy)
-    
-    pa = Proj("ESRI:54009") #equal surface mollweide
-    x, y = pa(lon, lat)
-    cop = {"type": "Polygon", "coordinates": [zip(x, y)]}
-    surface = shape(cop).area/10e6
+    #compute the surface 
+    pts_conform = pts.to_crs('ESRI:54009')
+    minx, miny, maxx, maxy = pts_conform.total_bounds
+    surface = (maxx-minx)*(maxy-miny)/10e6 #in km2
     
     msg = """
         <div>
