@@ -132,7 +132,7 @@ def run(file, pts, bands, sources, output):
         task_config = {
             'image':image,
             'description': descriptions[year],
-            'scale': 30,
+            'scale': pm.getScale(Satellites[year]),
             'region': ee_multiPolygon,
             'maxPixels': 10e12
         }

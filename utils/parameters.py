@@ -64,6 +64,17 @@ def getShortname(satellite):
     }
     
     return short[satellite]
+
+def getScale(satellite):
+    
+    scale = {
+        'sentinel_2': 10,
+        'landsat_5': 30, 
+        'landsat_7': 30,
+        'landsat_8': 30
+    }
+    
+    return scale[satellite]
         
 
 def getAvailableBands():
