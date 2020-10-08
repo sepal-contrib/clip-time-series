@@ -8,8 +8,10 @@ import ee
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
 import rasterio as rio
+from rasterio.mask import mask
 import numpy as np
-import gdal
+from shapely.geometry import box
+from PyPDF2 import PdfFileMerger, PdfFileReader
 
 
 from utils import gdrive
@@ -109,15 +111,14 @@ def run(file, pts, bands, sources, output):
     drive_handler = gdrive.gdrive()
     
     #transform them in ee points 
-    ee_pts = [ee.Geometry.Point(pts.loc[i]['lng'], pts.loc[i]['lat']) for i in range(len(pts))]
+    ee_pts = {pts.iloc[i].name: ee.Geometry.Point(pts.iloc[i]['lng'], pts.iloc[i]['lat']) for i in range(len(pts))}
     
     #create the buffers 
-    ee_buffers = [ee_pt.buffer(2000).bounds() for ee_pt in ee_pts]
+    ee_buffers = {i: ee_pts[i].buffer(2000).bounds() for i in ee_pts}
     
     #create a multipolygon mask 
-    ee_multiPolygon = ee.Geometry.MultiPolygon(ee_buffers).dissolve(maxError=100)           
+    ee_multiPolygon = ee.Geometry.MultiPolygon([ee_buffers[i] for i in ee_buffers]).dissolve(maxError=100)           
             
-    
     #create a filename list 
     descriptions = {}
     for year in range(pm.start_year, pm.end_year + 1):
@@ -162,29 +163,16 @@ def run(file, pts, bands, sources, output):
     
     #remove the files from gdrive 
     output.add_live_msg('Remove from gdrive')
-    drive_handler.delete_files(filesId)
+    drive_handler.delete_files(filesId)            
     
-    #create the sample buffers
-    ee_samples = [ee_pt.buffer(200).bounds() for ee_pt in ee_pts]
+    pdf_tmps = []
+    for index, row in pts.iterrows():
+        
+        pdf_tmp = pm.getTmpDir() + '{}_{}_tmp_pts_{}.pdf'.format(filename, name_bands, row['id'])
+        pdf_tmps.append(pdf_tmp)
     
-    ##compute ndvi and ndwi 
-    #ndvi = {}
-    #ndwi = {}
-    #output.add_live_msg('compute indices')
-    #for index, row in pts.iterrows():
-    #    ndvi[row['id']] = []
-    #    ndwi[row['id']] = []
-    #    
-    #    for year in range(pm.start_year, pm.end_year + 1):
-    #        #compute the yearlly mean ndvi for the current year 
-    #        ndvi[row['id']].append(getNDVI(sources, satellites[year], 'ndvi', ee_samples[index], year))
-    #        ndwi[row['id']].append(getNDWI(sources, satellites[year], 'ndwi', ee_samples[index], year))
-            
-    
-    #create the resulting pdf
-    with PdfPages(pdf_file) as pdf:
-        #each point is display on one single page
-        for index, row in pts.iterrows():
+        #create the resulting pdf
+        with PdfPages(pdf_file) as pdf:        
             
             page_title = "Pt_{} (lat:{:.5f}, lng:{:.5f})".format(
                 int(row['id']), 
@@ -192,40 +180,32 @@ def run(file, pts, bands, sources, output):
                 row['lng']
             )
             
-            output.add_live_msg('Creating pages for pt {}'.format(int(row['id'])))
+            output.add_live_msg('Creating page for pt {}'.format(int(row['id'])))
                   
             fig, axes = plt.subplots(pm.nb_line, pm.nb_col, figsize=(11.69,8.27), dpi=500)
             fig.suptitle(page_title, fontsize=16, fontweight ="bold")
-            
+            fig.set_tight_layout(True) 
             #display the images in a fig and export it as a pdf page
             for year in range(pm.start_year, pm.end_year + 1):
                 
                 #laod the file 
                 file = pm.getTmpDir() + descriptions[year] + '.tif'
                 
-                #create the tmp tif image cuted to buffer size
-                tmp_file = pm.getTmpDir() + descriptions[year] + '_pt_{}.tif'.format(row['id'])
-                
                 #extract the buffer bounds 
                 coords = ee_buffers[index].coordinates().get(0).getInfo()
-                ll, ur = coords[0], coords[2]
+                bl, tr = coords[0], coords[2]
 
-                # Get the bounding box
-                xMin, yMin, xMax, yMax = ll[0], ll[1], ur[0], ur[1]
-                
-                bounds = (xMin, yMin, xMax, yMax)
-                
-                #crop the image
-                gdal.Warp(tmp_file, file, outputBounds=bounds)
-                
-    
-                with rio.open(tmp_file) as f:
-                    data = f.read([1, 2, 3], masked=True)
+                # Create the bounding box
+                shape = box(bl[0], bl[1], tr[0], tr[1])
+            
+                with rio.open(file) as f:
+                    data, _ = mask(f, [shape], crop=True, all_touched=True)
                 
                 bands = [] 
                 for i in range(3):
                     band = data[i]
-                    h_, bin_ = np.histogram(band[np.isfinite(band)].flatten(), 3000, density=True) #remove the NaN from the analysis
+                    #remove the NaN from the analysis
+                    h_, bin_ = np.histogram(band[np.isfinite(band)].flatten(), 3000, density=True) 
     
                     cdf = h_.cumsum() # cumulative distribution function
                     cdf = 3000 * cdf / cdf[-1] # normalize
@@ -247,12 +227,7 @@ def run(file, pts, bands, sources, output):
                 ax.imshow(data, interpolation='nearest')
                 ax.set_title(str(year) + ' ' + pm.getShortname(satellites[year]), x=.0, y=.9, fontsize='small', backgroundcolor='white', ha='left')
                 ax.axis('off')
-                ax.set_aspect('equal', 'box')
-            
-                #delete the tmp file
-                #done on the fly to not exceed sepal memory limits
-                os.remove(tmp_file)
-            
+                ax.set_aspect('equal', 'box')            
             
             #finish the line with empty plots 
             start = pm.end_year - pm.start_year
@@ -262,28 +237,9 @@ def run(file, pts, bands, sources, output):
                 ax.axis('off')
                 ax.set_aspect('equal', 'box')
             
-            #save the page 
-            plt.tight_layout()
+            #save the page
             pdf.savefig(fig)
-            plt.close()
-            
-            ##create a second page with ndvi and ndwi
-            #years = [year for year in range(pm.start_year, pm.end_year + 1)]
-            #fig, (ax_ndvi, ax_ndwi) = plt.subplots(1, 2, figsize=(11.69,8.27))
-            #fig.suptitle(page_title, fontsize=16, fontweight ="bold")
-            #
-            #ax_ndvi.set_title('Anual mean ndvi')
-            #ax_ndvi.plot(years, ndvi[row['id']])
-            #ax_ndvi.set_ylim(0,1)
-            #
-            #ax_ndwi.set_title('Anual mean ndwi')
-            #ax_ndwi.plot(years, ndwi[row['id']])
-            #ax_ndwi.set_ylim(0,1)
-            #
-            ##save the page 
-            #plt.tight_layout()
-            #pdf.savefig(fig)
-            #plt.close()
+            plt.close('all')
             
     #flush the tmp repository 
     shutil.rmtree(pm.getTmpDir())
