@@ -47,4 +47,13 @@ EXPORT_BTN = "Export data"
 MISSING_IN = "One or several inputs are missing please process the previous steps"
 EXPORT_INPUTS = 'Using the set of points provided in "{}", the process will export the "{}" data using the "{}" bands'
 NO_VALID = "Please verify you're input before launching the export process"
+EXPORT_TXT = """
+The module will export your results to sepal in several steps:  
+
+- download the images from Google Earth Engine (using the provided parameters)
+- retrieve the images to Seapl (as `.tif` tiles) 
+- merge them into single year `.tif` raster
+- produce the `.pdf` file 
+- free the allocated storage
+"""
 
