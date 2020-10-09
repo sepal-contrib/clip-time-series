@@ -2,6 +2,7 @@ import shutil
 import os
 from pathlib import Path
 import time
+from glob import glob
 
 import pandas as pd
 import ee 
@@ -9,9 +10,12 @@ from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
 import rasterio as rio
 from rasterio.mask import mask
+from rasterio.merge import merge
+from rasterio.profiles import DefaultGTiffProfile
 import numpy as np
 from shapely.geometry import box
 from PyPDF2 import PdfFileMerger, PdfFileReader
+from sepal_ui import gdal as sgdal
 
 
 from utils import gdrive
@@ -117,36 +121,47 @@ def run(file, pts, bands, sources, output):
     ee_buffers = {i: ee_pts[i].buffer(2000).bounds() for i in ee_pts}
     
     #create a multipolygon mask 
-    ee_multiPolygon = ee.Geometry.MultiPolygon([ee_buffers[i] for i in ee_buffers]).dissolve(maxError=100)           
+    ee_multiPolygon = ee.Geometry.MultiPolygon([ee_buffers[i] for i in ee_buffers]).dissolve(maxError=100)  
+    
+    #create intelligent cliping multipolygons
+    buffers = [ee_pts[i].buffer(10000).bounds() for i in ee_pts]
+    geometries = ee_multiPolygon.geometries()
+    ee_polygons = [geometries.get(i) for i in range(geometries.length().getInfo())]         
             
     #create a filename list 
     descriptions = {}
     for year in range(pm.start_year, pm.end_year + 1):
         descriptions[year] = '{}_{}_{}'.format(filename, name_bands, year)
+        
+    #check if all the multipolygons have bee downloaded in gdrive
+    
     
     #load all the data in gdrive 
     satellites = {} #contain the names of the used satellites
+    task_list = []
     for year in range(pm.start_year, pm.end_year + 1):
             
         image, satellites[year] = getImage(sources, bands, ee_multiPolygon, year)
         
-        task_config = {
-            'image':image,
-            'description': descriptions[year],
-            'scale': pm.getScale(satellites[year]),
-            'region': ee_multiPolygon,
-            'maxPixels': 10e12
-        }
+        for i, polygon in enumerate(ee_polygons):
             
-        task = ee.batch.Export.image.toDrive(**task_config)
-        task.start()
+            description = descriptions[year] + "_{}".format(i)
+        
+            task_config = {
+                'image':image,
+                'description': description,
+                'scale': pm.getScale(satellites[year]),
+                'region': ee.Geometry(polygon),
+                'maxPixels': 10e12
+            }
+            
+            task = ee.batch.Export.image.toDrive(**task_config)
+            task.start()
+            task_list.append(description)
+            
         output.add_live_msg('exporting year: {}'.format(year))
     
-    #check the exportation evolution 
-    task_list = []
-    for year in range(pm.start_year, pm.end_year + 1):
-        task_list.append(descriptions[year])
-    
+    #check the exportation evolution     
     state = utils.custom_wait_for_completion(task_list, output)
     output.add_live_msg('Export to drive finished', 'success')
     time.sleep(2)
@@ -154,16 +169,22 @@ def run(file, pts, bands, sources, output):
     output.add_live_msg('Retreive to sepal')
     #retreive all the file ids 
     filesId = []
-    for year in range(pm.start_year, pm.end_year + 1):
-        filesId += drive_handler.get_files(descriptions[year])
+    for description in task_list:
+        filesId += drive_handler.get_files(description)
     
     #download the files   
     output.add_live_msg('Download files')
-    drive_handler.download_files(filesId, pm.getTmpDir())     
+    drive_handler.download_files(filesId, pm.getTmpDir())  
     
     #remove the files from gdrive 
     output.add_live_msg('Remove from gdrive')
-    drive_handler.delete_files(filesId)            
+    drive_handler.delete_files(filesId)     
+    
+    #merge them into a single file per year
+    output.add_live_msg('merge the files')
+    for year in range(pm.start_year, pm.end_year + 1):
+        files = [file for file in glob(pm.getTmpDir() + descriptions[year] + '*.tif')]
+        io = sgdal.merge(files, out_filename=pm.getTmpDir() + descriptions[year] + '.tif', v=True, output=output, co="COMPRESS=LZW")
     
     pdf_tmps = []
     for index, row in pts.iterrows():
@@ -172,7 +193,7 @@ def run(file, pts, bands, sources, output):
         pdf_tmps.append(pdf_tmp)
     
         #create the resulting pdf
-        with PdfPages(pdf_file) as pdf:        
+        with PdfPages(pdf_tmp) as pdf:        
             
             page_title = "Pt_{} (lat:{:.5f}, lng:{:.5f})".format(
                 int(row['id']), 
@@ -243,6 +264,13 @@ def run(file, pts, bands, sources, output):
             
     #flush the tmp repository 
     shutil.rmtree(pm.getTmpDir())
+    
+    #merge all the pdf files 
+    mergedObject = PdfFileMerger()
+    for pdf in pdf_tmps:
+        mergedObject.append(PdfFileReader(pdf, 'rb'))
+        os.remove(pdf)
+    mergedObject.write(pdf_file)
     
     output.add_live_msg('PDF output finished', 'success')
     
