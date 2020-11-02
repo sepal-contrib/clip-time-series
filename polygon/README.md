@@ -1,5 +1,7 @@
 # clip-time-series-polygons
 
+hard copy of [12rambau/clip-time-series-polygon](https://github.com/12rambau/clip-time-series-polygons) until it's added to the module
+
 create a clip time series for a list of polygons.
 Each clip will be a square of a minimum 2km of side surounding the given polygon.
 The user will be able to choose the band combo, the initial shapes, and the color he wants to use to display the polygon (red would be unfortunate in Nir, red, Green for example).
