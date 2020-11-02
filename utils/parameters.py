@@ -15,7 +15,7 @@ def create_folder(pathname):
     return pathname
 
 def getResultDir():
-    pathname = os.path.join(os.path.expanduser('~'), 'time_series_results') + '/'
+    pathname = os.path.join(os.path.expanduser('~'), 'clip_results') + '/'
     return create_folder(pathname)
 
 def getTmpDir():

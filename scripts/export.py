@@ -181,14 +181,16 @@ def run(file, pts, bands, sources, output):
     drive_handler.delete_files(filesId)     
     
     #merge them into a single file per year
-    output.add_live_msg('merge the files')
     for year in range(pm.start_year, pm.end_year + 1):
+        output.add_live_msg(f'merge the files for year {year}')
         files = [file for file in glob(pm.getTmpDir() + descriptions[year] + '*.tif')]
         io = sgdal.merge(files, out_filename=pm.getTmpDir() + descriptions[year] + '.tif', v=True, output=output, co="COMPRESS=LZW")
+        for file in files:
+            os.remove(file)
     
     pdf_tmps = []
     for index, row in pts.iterrows():
-        
+        output.add_live_msg(f'create tmp pdf file for year {year}')
         pdf_tmp = pm.getTmpDir() + '{}_{}_tmp_pts_{}.pdf'.format(filename, name_bands, row['id'])
         pdf_tmps.append(pdf_tmp)
     
@@ -262,15 +264,17 @@ def run(file, pts, bands, sources, output):
             pdf.savefig(fig)
             plt.close('all')
             
-    #flush the tmp repository 
-    shutil.rmtree(pm.getTmpDir())
     
     #merge all the pdf files 
+    output.add_live_msg('merge all pdf files')
     mergedObject = PdfFileMerger()
     for pdf in pdf_tmps:
         mergedObject.append(PdfFileReader(pdf, 'rb'))
         os.remove(pdf)
     mergedObject.write(pdf_file)
+    
+    #flush the tmp repository 
+    shutil.rmtree(pm.getTmpDir())
     
     output.add_live_msg('PDF output finished', 'success')
     
