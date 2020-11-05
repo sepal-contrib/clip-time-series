@@ -41,7 +41,7 @@ SQUARE_SIZE = "Square size"
 NO_START = "Please provide a start year"
 NO_END = "Please provide a end year"
 NO_SQUARE = "Please provide a square size"
-WRONG_DATEs = "Start year cannot be higher than end year"
+WRONG_DATES = "Start year cannot be higher than end year"
 
 ##################################
 ##         Exports              ##

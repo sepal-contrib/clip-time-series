@@ -81,8 +81,9 @@ def getImage(sources, bands, mask, year):
     end = str(year) + '-12-31'
     
     #priority selector for satellites
-    for satelliteId in pm.getSatellites(sources):
-        dataset = ee.ImageCollection(pm.getSatellites(sources)[satelliteId]) \
+    satellites = pm.getSatellites(sources, year)
+    for satelliteId in satellites:
+        dataset = ee.ImageCollection(satellites[satelliteId]) \
             .filterDate(start, end) \
             .filterBounds(mask) \
             .map(pm.getCloudMask(satelliteId))
@@ -137,16 +138,18 @@ def run(file, pts, bands, sources, start, end, square_size, output):
     for year in range(start_year, end_year + 1):
         descriptions[year] = f'{filename}_{name_bands}_{year}'
         
-    #check if all the multipolygons have bee downloaded in gdrive
+    #check if all the multipolygons have been downloaded in gdrive
     
     
     #load all the data in gdrive 
     satellites = {} #contain the names of the used satellites
     task_list = []
     for year in range(start_year, end_year + 1):
-            
+        
+        output.add_live_msg(f'load the gee images for {year}')
         image, satellites[year] = getImage(sources, bands, ee_multiPolygon, year)
         
+        output.add_live_msg(f'Export images for year {year} to Gdrive')
         for i, polygon in enumerate(ee_polygons):
             
             description = f"{descriptions[year]}_{i}"
@@ -163,11 +166,11 @@ def run(file, pts, bands, sources, start, end, square_size, output):
             task.start()
             task_list.append(description)
             
-        output.add_live_msg(f'exporting year: {year}')
+        output.add_live_msg(f'Year {year} exported to Gdrive')
     
     #check the exportation evolution     
     state = utils.custom_wait_for_completion(task_list, output)
-    output.add_live_msg('Export to drive finished', 'success')
+    output.add_live_msg('Download to drive finished', 'success')
     time.sleep(2)
     
     output.add_live_msg('Retreive to sepal')

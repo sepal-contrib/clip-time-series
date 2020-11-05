@@ -41,19 +41,15 @@ def getPositionPdf(i):
     """Return the position of the square on the pdf page"""
     return [int(i/5), i%5]
 
-def getSatellites(sources):
+def getSatellites(sources, year):
     
     satellites = {}
     
-    if 'sentinel' in sources:
-        satellites.update({'sentinel_2': 'COPERNICUS/S2_SR'})
-        
+    if 'sentinel' in sources and year >= 2015: satellites['sentinel_2'] = 'COPERNICUS/S2_SR'
     if 'landsat' in sources:
-        satellites.update({
-            'landsat_8': 'LANDSAT/LC08/C01/T1_SR',
-            'landsat_5': 'LANDSAT/LT05/C01/T1_SR',
-            'landsat_7': 'LANDSAT/LE07/C01/T1_SR',
-        })
+        if year >= 2013: satellites['landsat_8'] = 'LANDSAT/LC08/C01/T1_SR'
+        if year <= 2013: satellites['landsat_5'] = 'LANDSAT/LT05/C01/T1_SR'
+        satellites['landsat_7'] = 'LANDSAT/LE07/C01/T1_SR'
         
     return satellites
 
