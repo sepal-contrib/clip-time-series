@@ -26,11 +26,13 @@ def getTmpDir():
 ##      constant        ##
 ##########################
 
-start_year = 2005
-end_year = 2020 #when changing check that the number of line and column is still adapted
+min_start_year = 2005
+max_end_year = 2020 #when changing check that the number of line and column is still adapted
 nb_line = 4
 nb_col = 5
 sources = ['landsat', 'sentinel']
+min_square = 500
+max_square = 10000
 
 ##########################
 ##       function       ##
@@ -136,13 +138,6 @@ def getAvailableBands():
     }
     
     return bands
-
-def getTxt():
-    """get all the txt files available in th folders"""
-    root_dir = os.path.expanduser('~')
-    raw_list = glob.glob(root_dir + "/**/*.txt", recursive=True)
-    
-    return raw_list
 
 def vizParam(bands, buffer, image, satellite):
     
