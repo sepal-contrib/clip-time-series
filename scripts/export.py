@@ -126,10 +126,11 @@ def run(file, pts, bands, sources, start, end, square_size, output):
     ee_buffers = {i: ee_pts[i].buffer(square_size).bounds() for i in ee_pts}
     
     #create a multipolygon mask 
-    ee_multiPolygon = ee.Geometry.MultiPolygon([ee_buffers[i] for i in ee_buffers]).dissolve(maxError=100)  
+    #ee_multiPolygon = ee.Geometry.MultiPolygon([ee_buffers[i] for i in ee_buffers]).dissolve(maxError=100)
+    ee_multiPolygon = ee.Geometry.MultiPolygon([ee_pts[i].buffer(10000).bounds() for i in ee_pts]).dissolve(maxError=100)  
     
     #create intelligent cliping multipolygons of 10000 km
-    buffers = [ee_pts[i].buffer(10000).bounds() for i in ee_pts]
+    #buffers = [ee_pts[i].buffer(10000).bounds() for i in ee_pts]
     geometries = ee_multiPolygon.geometries()
     ee_polygons = [geometries.get(i) for i in range(geometries.length().getInfo())]         
             
@@ -137,8 +138,6 @@ def run(file, pts, bands, sources, start, end, square_size, output):
     descriptions = {}
     for year in range(start_year, end_year + 1):
         descriptions[year] = f'{filename}_{name_bands}_{year}'
-        
-    #check if all the multipolygons have been downloaded in gdrive
     
     
     #load all the data in gdrive 
@@ -153,18 +152,20 @@ def run(file, pts, bands, sources, start, end, square_size, output):
         for i, polygon in enumerate(ee_polygons):
             
             description = f"{descriptions[year]}_{i}"
-        
-            task_config = {
-                'image':image,
-                'description': description,
-                'scale': pm.getScale(satellites[year]),
-                'region': ee.Geometry(polygon),
-                'maxPixels': 10e12
-            }
             
-            task = ee.batch.Export.image.toDrive(**task_config)
-            task.start()
-            task_list.append(description)
+            if drive_handler.get_files(description) == []:
+        
+                task_config = {
+                    'image':image,
+                    'description': description,
+                    'scale': pm.getScale(satellites[year]),
+                    'region': ee.Geometry(polygon),
+                    'maxPixels': 10e12
+                }
+            
+                task = ee.batch.Export.image.toDrive(**task_config)
+                task.start()
+                task_list.append(description)
             
         output.add_live_msg(f'Year {year} exported to Gdrive')
     
