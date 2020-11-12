@@ -16,6 +16,7 @@ import numpy as np
 from shapely.geometry import box
 from PyPDF2 import PdfFileMerger, PdfFileReader
 from sepal_ui import gdal as sgdal
+import ipyvuetify as v
 
 
 from utils import gdrive
@@ -23,6 +24,26 @@ from utils import utils
 from utils import parameters as pm
 
 ee.Initialize()
+
+def update_progress(progress, output, msg='Progress', bar_length=30):
+    # not working yet in ipyvuetify 
+    plain_char = '█'
+    empty_char = ' '  
+    progress = float(progress)
+    block = int(round(bar_length * progress))
+
+    text = f'|{plain_char * block + empty_char * (bar_length - block)}|'
+    
+    output.add_live_msg(v.Html(
+        tag='span', 
+        children=[
+            v.Html(tag='span', children=[f'{msg}: '], class_='d-inline'),
+            v.Html(tag='pre', class_='info--text d-inline', children=[text]),
+            v.Html(tag='span', children=[f' {progress *100:.1f}%'], class_='d-inline')
+        ]
+    ))
+   
+    return
 
 def getNDVI(sources, satellite, bands, mask, year):
     
@@ -125,12 +146,10 @@ def run(file, pts, bands, sources, start, end, square_size, output):
     #create the buffers 
     ee_buffers = {i: ee_pts[i].buffer(square_size).bounds() for i in ee_pts}
     
-    #create a multipolygon mask 
-    #ee_multiPolygon = ee.Geometry.MultiPolygon([ee_buffers[i] for i in ee_buffers]).dissolve(maxError=100)
+    #create a multipolygon mask
     ee_multiPolygon = ee.Geometry.MultiPolygon([ee_pts[i].buffer(10000).bounds() for i in ee_pts]).dissolve(maxError=100)  
     
     #create intelligent cliping multipolygons of 10000 km
-    #buffers = [ee_pts[i].buffer(10000).bounds() for i in ee_pts]
     geometries = ee_multiPolygon.geometries()
     ee_polygons = [geometries.get(i) for i in range(geometries.length().getInfo())]         
             
@@ -143,15 +162,13 @@ def run(file, pts, bands, sources, start, end, square_size, output):
     #load all the data in gdrive 
     satellites = {} #contain the names of the used satellites
     task_list = []
-    for year in range(start_year, end_year + 1):
+    for i, year in enumerate(range(start_year, end_year + 1)):
         
-        output.add_live_msg(f'load the gee images for {year}')
         image, satellites[year] = getImage(sources, bands, ee_multiPolygon, year)
         
-        output.add_live_msg(f'Export images for year {year} to Gdrive')
-        for i, polygon in enumerate(ee_polygons):
+        for j, polygon in enumerate(ee_polygons):
             
-            description = f"{descriptions[year]}_{i}"
+            description = f"{descriptions[year]}_{j}"
             
             if drive_handler.get_files(description) == []:
         
@@ -166,8 +183,9 @@ def run(file, pts, bands, sources, start, end, square_size, output):
                 task = ee.batch.Export.image.toDrive(**task_config)
                 task.start()
                 task_list.append(description)
-            
-        output.add_live_msg(f'Year {year} exported to Gdrive')
+        
+        update_progress(i/(len(range(start_year, end_year + 1)) - 1), output, msg='Image loaded')
+        
     
     #check the exportation evolution     
     state = utils.custom_wait_for_completion(task_list, output)
@@ -177,8 +195,8 @@ def run(file, pts, bands, sources, start, end, square_size, output):
     output.add_live_msg('Retreive to sepal')
     #retreive all the file ids 
     filesId = []
-    for description in task_list:
-        filesId += drive_handler.get_files(description)
+    for year in descriptions:
+        filesId += drive_handler.get_files(descriptions[year])
     
     #download the files   
     output.add_live_msg('Download files')
@@ -191,14 +209,14 @@ def run(file, pts, bands, sources, start, end, square_size, output):
     #merge them into a single file per year
     for year in range(start_year, end_year + 1):
         output.add_live_msg(f'merge the files for year {year}')
-        files = [file for file in glob(pm.getTmpDir() + descriptions[year] + '*.tif')]
+        files = [file for file in glob(f'{pm.getTmpDir()}{descriptions[year]}_*.tif')]
         io = sgdal.merge(files, out_filename=f'{pm.getTmpDir()}{descriptions[year]}.tif', v=True, output=output, co="COMPRESS=LZW")
         for file in files:
             os.remove(file)
     
     pdf_tmps = []
+    update_progress(0, output, msg='Pdf page created')
     for index, row in pts.iterrows():
-        output.add_live_msg(f'create tmp pdf file for year {year}')
         pdf_tmp = f"{pm.getTmpDir()}{filename}_{name_bands}_tmp_pts_{row['id']}.pdf"
         pdf_tmps.append(pdf_tmp)
     
@@ -206,8 +224,6 @@ def run(file, pts, bands, sources, start, end, square_size, output):
         with PdfPages(pdf_tmp) as pdf:        
             
             page_title = f"Pt_{row['id']} (lat:{row['lat']:.5f}, lng:{row['lng']:.5f})"
-            
-            output.add_live_msg(f"Creating page for pt {row['id']}")
                   
             fig, axes = plt.subplots(pm.nb_line, pm.nb_col, figsize=(11.69,8.27), dpi=500)
             fig.suptitle(page_title, fontsize=16, fontweight ="bold")
@@ -272,8 +288,10 @@ def run(file, pts, bands, sources, start, end, square_size, output):
             #save the page
             pdf.savefig(fig)
             plt.close('all')
-            
-    
+           
+        progress = index/(len(pts) - 1) if len(pts) > 1 else 1
+        update_progress(progress, output, msg='Pdf page created')
+        
     #merge all the pdf files 
     output.add_live_msg('merge all pdf files')
     mergedObject = PdfFileMerger()
