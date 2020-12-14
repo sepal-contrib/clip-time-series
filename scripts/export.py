@@ -170,19 +170,19 @@ def run(file, pts, bands, sources, start, end, square_size, output):
             
             description = f"{descriptions[year]}_{j}"
             
-            if drive_handler.get_files(description) == []:
-        
-                task_config = {
-                    'image':image,
-                    'description': description,
-                    'scale': pm.getScale(satellites[year]),
-                    'region': ee.Geometry(polygon),
-                    'maxPixels': 10e12
-                }
-            
-                task = ee.batch.Export.image.toDrive(**task_config)
-                task.start()
-                task_list.append(description)
+            #if drive_handler.get_files(description) == []:
+            #
+            #    task_config = {
+            #        'image':image,
+            #        'description': description,
+            #        'scale': pm.getScale(satellites[year]),
+            #        'region': ee.Geometry(polygon),
+            #        'maxPixels': 10e12
+            #    }
+            #
+            #    task = ee.batch.Export.image.toDrive(**task_config)
+            #    task.start()
+            #    task_list.append(description)
         
         update_progress(i/(len(range(start_year, end_year + 1)) - 1), output, msg='Image loaded')
         
@@ -203,8 +203,8 @@ def run(file, pts, bands, sources, start, end, square_size, output):
     drive_handler.download_files(filesId, pm.getTmpDir())  
     
     #remove the files from gdrive 
-    output.add_live_msg('Remove from gdrive')
-    drive_handler.delete_files(filesId)     
+    #output.add_live_msg('Remove from gdrive')
+    #drive_handler.delete_files(filesId)     
     
     #merge them into a single file per year
     for year in range(start_year, end_year + 1):
