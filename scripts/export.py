@@ -296,7 +296,8 @@ def run(file, pts, bands, sources, start, end, square_size, output):
     mergedObject.write(str(pdf_file))
     
     #flush the tmp repository 
-    shutil.rmtree(str(pm.getTmpDir()))
+    for file in pm.getTmpDir().glob('*.*'):
+        file.unlink()
     
     output.add_live_msg('PDF output finished', 'success')
     
