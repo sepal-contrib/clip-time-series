@@ -16,7 +16,7 @@ def getResultDir():
     return result_dir
 
 def getTmpDir():
-    tmp_dir = Path('~', 'tmp').expanduser()
+    tmp_dir = getResultDir().joinpath('tmp')
     tmp_dir.mkdir(exist_ok=True)
     return tmp_dir
 
