@@ -5,20 +5,21 @@ import shutil
 import pandas as pd 
 import geemap
 
-from utils import messages as ms
+from component.message import cm
+from component import parameter as cp
 
 def isConform(file):
     """perform several checks on the file given by the user retrun an error message if something is wrong else 0"""
     
     #check if the file exist
     if not os.path.isfile(file):
-        return ms.NOT_A_FILE.format(file)
+        return cm.NOT_A_FILE.format(file)
     
     #try to read the file 
     try:
         df = pd.read_csv(file)
     except:
-        return ms.ERROR_READING_FILE.format(file)
+        return cm.ERROR_READING_FILE.format(file)
     
     #validate
     return 0
@@ -48,17 +49,10 @@ def setMap(pts, m):
 
 def download_test_file(output):
     
-    #get the file name 
-    filename = 'clip_test_points.csv'
-    
-    # get the test and download folders
-    dst_file = Path('~', 'downloads').expanduser()
-    src_file = Path(__file__).parents[1].joinpath('test_data', filename)
-    
     # download the file to the download directory 
-    shutil.copy(src_file, dst_file)
+    shutil.copy(cp.test_dataset, cp.sepal_down_dir)
     
     # update the output
-    output.add_live_msg(f"The test dataset have been downloaded. It will be available in the `~/downloads/{filename}` folder of your sepal account.") #" The file has been automatically set as source file in the select table tile.")
+    output.add_live_msg(cm.table.test.msg.format(cp.sepal_down_dir, cp.test_dataset.stem), 'success')
     
-    return dst_file 
+    return cp.sepal_down_dir

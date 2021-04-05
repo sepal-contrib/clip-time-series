@@ -1,6 +1,8 @@
-from sepal_ui.scripts import gee as gs
-from utils import messages as ms
 import time
+
+from sepal_ui.scripts import gee as gs
+
+from component.message import cm
 
 def custom_wait_for_completion(task_description, output):
     """Wait until the selected process are finished. Display some output information
@@ -16,7 +18,7 @@ def custom_wait_for_completion(task_description, output):
     
     state = 'UNSUBMITTED'
     while not (state == 'COMPLETED' or state =='FAILED'):
-        output.add_live_msg(ms.STATUS.format(state))
+        output.add_live_msg(cm.gee.status.format(state))
         time.sleep(5)
                     
         #search for the task in task_list

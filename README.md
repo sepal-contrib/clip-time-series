@@ -1,5 +1,7 @@
 # Clip time series
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 ## About 
 
 This module allows the user to download as a .pdf an auto generated time series from 2005 to 2020. 
