@@ -29,6 +29,7 @@
         ]
     },
     "viz": {
+        "title": "set up your inputs",
         "intro": "Select sources and bands to be displayed",
         "btn": "Validate your bands",
         "sources": "select the sources satellites",
@@ -41,7 +42,7 @@
         "disclaimer": "The bands displayed in this preview have not been stretched. The exporting process will vastly improve the contrats",
         "start_year": "Specify the start year",
         "end_year": "Specify the end year",
-        "sqaure_size": "Square size",
+        "square_size": "Square size",
         "no_start": "Please provide a start year",
         "no_end": "Please provide a end year",
         "no_square": "Please provide a square size",
