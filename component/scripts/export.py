@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import rasterio as rio
 from rasterio.mask import mask
 from rasterio.merge import merge
+from rasterio.windows import from_bounds
 from rasterio.profiles import DefaultGTiffProfile
 import numpy as np
 from shapely.geometry import box
@@ -245,7 +246,7 @@ def run(file, pts, bands, sources, start, end, square_size, output):
                 shape = box(bl[0], bl[1], tr[0], tr[1])
             
                 with rio.open(file) as f:
-                    data, _ = mask(f, [shape], crop=True, all_touched=True)
+                    data = src.read(window=from_bounds(bl[0], bl[1], rtr[0], tr[1], f.transform))
                 
                 bands = [] 
                 for i in range(3):
