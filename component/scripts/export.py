@@ -18,9 +18,9 @@ from PyPDF2 import PdfFileMerger, PdfFileReader
 import ipyvuetify as v
 
 
-from utils import gdrive
-from utils import utils
-from utils import parameters as pm
+from .gdrive import gdrive
+from .gee import custom_wait_for_completion
+from component import parameter as cp
 
 ee.Initialize()
 
@@ -50,14 +50,14 @@ def getNDVI(sources, satellite, bands, mask, year):
     end = str(year) + '-12-31'
     
     #select the images from the appropriate satellite
-    image = ee.ImageCollection(pm.getSatellites(sources)[satellite]) \
+    image = ee.ImageCollection(cp.getSatellites(sources)[satellite]) \
             .filterDate(start, end) \
             .filterBounds(mask) \
-            .map(pm.getCloudMask(satellite)) \
+            .map(cp.getCloudMask(satellite)) \
             .mosaic()
     
-    nir = image.select(pm.getAvailableBands()['ndvi'][satellite][0])
-    red = image.select(pm.getAvailableBands()['ndvi'][satellite][1])
+    nir = image.select(cp.getAvailableBands()['ndvi'][satellite][0])
+    red = image.select(cp.getAvailableBands()['ndvi'][satellite][1])
     
     ndvi = nir.subtract(red).divide(nir.add(red)).rename('NDVI')
     
@@ -75,14 +75,14 @@ def getNDWI(sources, satellite, bands, mask, year):
     end = str(year) + '-12-31'
     
     #select the images from the appropriate satellite
-    image = ee.ImageCollection(pm.getSatellites(sources)[satellite]) \
+    image = ee.ImageCollection(cp.getSatellites(sources)[satellite]) \
             .filterDate(start, end) \
             .filterBounds(mask) \
-            .map(pm.getCloudMask(satellite)) \
+            .map(cp.getCloudMask(satellite)) \
             .mosaic()
     
-    nir = image.select(pm.getAvailableBands()['ndwi'][satellite][0])
-    swir = image.select(pm.getAvailableBands()['ndwi'][satellite][1])
+    nir = image.select(cp.getAvailableBands()['ndwi'][satellite][0])
+    swir = image.select(cp.getAvailableBands()['ndwi'][satellite][1])
     
     ndwi = nir.subtract(swir).divide(nir.add(swir)).rename('NDWI')
     
@@ -101,18 +101,18 @@ def getImage(sources, bands, mask, year):
     end = str(year) + '-12-31'
     
     #priority selector for satellites
-    satellites = pm.getSatellites(sources, year)
+    satellites = cp.getSatellites(sources, year)
     for satelliteId in satellites:
         dataset = ee.ImageCollection(satellites[satelliteId]) \
             .filterDate(start, end) \
             .filterBounds(mask) \
-            .map(pm.getCloudMask(satelliteId))
+            .map(cp.getCloudMask(satelliteId))
         
         if dataset.size().getInfo() > 0:
             satellite = satelliteId
             break
             
-    clip = dataset.median().clip(mask).select(pm.getAvailableBands()[bands][satelliteId])
+    clip = dataset.median().clip(mask).select(cp.getAvailableBands()[bands][satelliteId])
     
     return (clip, satelliteId)
     
@@ -120,8 +120,8 @@ def getImage(sources, bands, mask, year):
 def run(file, pts, bands, sources, start, end, square_size, output):
     
     #check dates 
-    start_year = max(start, pm.min_start_year)
-    end_year = min(end, pm.max_end_year)
+    start_year = max(start, cp.min_start_year)
+    end_year = min(end, cp.max_end_year)
     
     #get the filename
     filename = Path(file).stem
@@ -130,14 +130,14 @@ def run(file, pts, bands, sources, start, end, square_size, output):
     name_bands = '_'.join(bands.split(', '))
     
     #pdf name 
-    pdf_file = pm.getResultDir().joinpath(f'{filename}_{name_bands}_{start_year}_{end_year}.pdf')
+    pdf_file = cp.getResultDir().joinpath(f'{filename}_{name_bands}_{start_year}_{end_year}.pdf')
     
     if pdf_file.is_file():
         output.add_live_msg('Pdf already exist', 'success')
         return pdf_file
     
     #start the drive handler 
-    drive_handler = gdrive.gdrive()
+    drive_handler = gdrive()
     
     #transform them in ee points 
     ee_pts = {pts.iloc[i].name: ee.Geometry.Point(pts.iloc[i]['lng'], pts.iloc[i]['lat']) for i in range(len(pts))}
@@ -173,7 +173,7 @@ def run(file, pts, bands, sources, start, end, square_size, output):
                 task_config = {
                     'image':image,
                     'description': description,
-                    'scale': pm.getScale(satellites[year]),
+                    'scale': cp.getScale(satellites[year]),
                     'region': ee.Geometry(polygon),
                     'maxPixels': 10e12
                 }
@@ -186,7 +186,7 @@ def run(file, pts, bands, sources, start, end, square_size, output):
         
     
     #check the exportation evolution     
-    state = utils.custom_wait_for_completion(task_list, output)
+    state = custom_wait_for_completion(task_list, output)
     output.add_live_msg('Download to drive finished', 'success')
     time.sleep(2)
     
@@ -198,7 +198,7 @@ def run(file, pts, bands, sources, start, end, square_size, output):
     
     #download the files   
     output.add_live_msg('Download files')
-    drive_handler.download_files(filesId, pm.getTmpDir())  
+    drive_handler.download_files(filesId, cp.getTmpDir())  
     
     #remove the files from gdrive 
     #output.add_live_msg('Remove from gdrive')
@@ -207,12 +207,12 @@ def run(file, pts, bands, sources, start, end, square_size, output):
     #merge them into a single file per year
     for year in range(start_year, end_year + 1):
         output.add_live_msg(f'merge the files for year {year}')
-        merge_tiles(pm.getTmpDir(), descriptions[year], output)
+        merge_tiles(cp.getTmpDir(), descriptions[year], output)
     
     pdf_tmps = []
     update_progress(0, output, msg='Pdf page created')
     for index, row in pts.iterrows():
-        pdf_tmp = pm.getTmpDir().joinpath(f'{filename}_{name_bands}_tmp_pts_{row["id"]}.pdf')
+        pdf_tmp = cp.getTmpDir().joinpath(f'{filename}_{name_bands}_tmp_pts_{row["id"]}.pdf')
         pdf_tmps.append(pdf_tmp)
     
         #create the resulting pdf
@@ -220,7 +220,7 @@ def run(file, pts, bands, sources, start, end, square_size, output):
             
             page_title = f"Pt_{row['id']} (lat:{row['lat']:.5f}, lng:{row['lng']:.5f})"
                   
-            fig, axes = plt.subplots(pm.nb_line, pm.nb_col, figsize=(11.69,8.27), dpi=500)
+            fig, axes = plt.subplots(cp.nb_line, cp.nb_col, figsize=(11.69,8.27), dpi=500)
             fig.suptitle(page_title, fontsize=16, fontweight ="bold")
             fig.set_tight_layout(True) 
             #display the images in a fig and export it as a pdf page
@@ -228,7 +228,7 @@ def run(file, pts, bands, sources, start, end, square_size, output):
             for year in range(start_year, end_year + 1):
                 
                 #laod the file 
-                file = pm.getTmpDir().joinpath(f'{descriptions[year]}.tif')
+                file = cp.getTmpDir().joinpath(f'{descriptions[year]}.tif')
                 
                 #extract the buffer bounds 
                 coords = ee_buffers[index].coordinates().get(0).getInfo()
@@ -261,10 +261,10 @@ def run(file, pts, bands, sources, start, end, square_size, output):
                 data = data.clip(0, 1)
                 data = np.transpose(data,[1,2,0])
             
-                place = pm.getPositionPdf(placement_id) 
+                place = cp.getPositionPdf(placement_id) 
                 ax = axes[place[0], place[1]]
                 ax.imshow(data, interpolation='nearest')
-                ax.set_title(str(year) + ' ' + pm.getShortname(satellites[year]), x=.0, y=.9, fontsize='small', backgroundcolor='white', ha='left')
+                ax.set_title(str(year) + ' ' + cp.getShortname(satellites[year]), x=.0, y=.9, fontsize='small', backgroundcolor='white', ha='left')
                 ax.axis('off')
                 ax.set_aspect('equal', 'box')
                 
@@ -272,8 +272,8 @@ def run(file, pts, bands, sources, start, end, square_size, output):
                 placement_id += 1
             
             #finish the file with empty plots 
-            while placement_id < pm.nb_line * pm.nb_col:
-                place = pm.getPositionPdf(placement_id) 
+            while placement_id < cp.nb_line * cp.nb_col:
+                place = cp.getPositionPdf(placement_id) 
                 ax = axes[place[0], place[1]]
                 ax.axis('off')
                 ax.set_aspect('equal', 'box')
@@ -296,10 +296,10 @@ def run(file, pts, bands, sources, start, end, square_size, output):
     mergedObject.write(str(pdf_file))
     
     #flush the tmp repository 
-    #shutil.rmtree(pm.getTmpDir())
-    for file in pm.getTmpDir().glob('*.*'):
+    #shutil.rmtree(cp.getTmpDir())
+    for file in cp.getTmpDir().glob('*.*'):
         file.unlink()
-    pm.getTmpDir().rmdir()
+    cp.getTmpDir().rmdir()
     
     output.add_live_msg('PDF output finished', 'success')
     

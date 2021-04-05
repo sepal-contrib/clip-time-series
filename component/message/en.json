@@ -1,0 +1,83 @@
+{
+    "app": {
+        "title": "Time series",
+        "drawer_item": {
+            "points": "Import points",
+            "viz": "Visualize Points",
+            "export": "Export selected data",
+            "about": "About"
+        }
+    },
+    "export": {
+        "title": "Export data",
+        "valid_data": "Before launching the exportation you need to validate your data. They will be display  in this very frame. If you need to perform any modification please go back to the previous stages",
+         "valid_btn": "Validate data",
+        "export_intro": "Click on the \"Export data\" button to export your data to a pdf file",
+        "btn": "Export data",
+        "down_btn": "PDF time series",
+        "no_input": "One or several inputs are missing please process the previous steps",
+        "inputs": "Using the set of points provided in \"{}\", the process will export the \"{}\" data using the \"{}\" bands",
+        "no_valid": "Please verify you're input before launching the export process",
+        "txt": [
+            "The module will export your results to sepal in several steps:",
+            "",
+            "- download the images from Google Earth Engine (using the provided parameters)",
+            "- retrieve the images to Seapl (as `.tif` tiles)",
+            "- merge them into single year `.tif` raster",
+            "- produce the `.pdf` file",
+            "- free the allocated storage"
+        ]
+    },
+    "viz": {
+        "intro": "Select sources and bands to be displayed",
+        "btn": "Validate your bands",
+        "sources": "select the sources satellites",
+        "bands": "select the band to be displayed",
+        "points": "Display Point {}: (lat: {:.5f}, lng: {:.5f})",
+        "no_pts": "No points of observation are registered. Please go back to step 1",
+        "no_bands": "Please provide a the bands you want to observe on your images",
+        "no_sources": "please provide the satellite sources",
+        "sentinel_disabled": "The processing of the sentinel 2 images provide lots of blanks areas at the moment. we strongly suggest to only use landsat 7 images",
+        "disclaimer": "The bands displayed in this preview have not been stretched. The exporting process will vastly improve the contrats",
+        "start_year": "Specify the start year",
+        "end_year": "Specify the end year",
+        "sqaure_size": "Square size",
+        "no_start": "Please provide a start year",
+        "no_end": "Please provide a end year",
+        "no_square": "Please provide a square size",
+        "wrong_date": "Start year cannot be higher than end year"
+    },
+    "table": {
+        "title": "Select a file",
+        "intro": "Select the table in your sepal folders",
+        "btn": "load your pts file",
+        "file_select": "Select a file",
+        "not_a_file": "the file {} does not exist",
+        "error_reading_file": "the file {} cannot be read",
+        "wrong_headers": "The header of the file are not well diplayed",
+        "col_intro": "Select the columns associated with the 3 key informations",
+        "col_btn": "Validate your columns",
+        "col_lng": "select the Longitude column",
+        "col_lat": "Select the latitude column",
+        "col_id": "select the id column",
+        "read_columns": "The dropdown have been updated with the header of your file : [{}]",
+        "missing_input": "One of the column is unknown",
+        "valid_columns": "Your columns have been validated",
+        "reapeated_input": "One of the input have been repeated. Each column must be different",
+        "test": {
+            "txt": "By clicking on the following btn you'll download a test dataset of points. This file will be downloaded to your SEPAL `~/downloads` folder.",
+            "btn": "Download the test dataset",
+            "title": "Download test data File",
+            "msg": "The test dataset have been downloaded. It will be available in the \"{}/{}.csv\" folder of your sepal account."
+        },
+        "map": {
+            "title": "Display points"
+        }
+    },
+    "gee": {
+        "status": "STATUS: {}"
+    },
+    "result": {
+        "title": "Export results"
+    }
+}
