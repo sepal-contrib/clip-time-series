@@ -130,7 +130,7 @@ def run(file, pts, bands, sources, start, end, square_size, output):
     name_bands = '_'.join(bands.split(', '))
     
     #pdf name 
-    pdf_file = cp.getResultDir().joinpath(f'{filename}_{name_bands}_{start_year}_{end_year}.pdf')
+    pdf_file = cp.result_dir.joinpath(f'{filename}_{name_bands}_{start_year}_{end_year}.pdf')
     
     if pdf_file.is_file():
         output.add_live_msg('Pdf already exist', 'success')
@@ -198,7 +198,7 @@ def run(file, pts, bands, sources, start, end, square_size, output):
     
     #download the files   
     output.add_live_msg('Download files')
-    drive_handler.download_files(filesId, cp.getTmpDir())  
+    drive_handler.download_files(filesId, cp.tmp_dir)  
     
     #remove the files from gdrive 
     #output.add_live_msg('Remove from gdrive')
@@ -207,12 +207,12 @@ def run(file, pts, bands, sources, start, end, square_size, output):
     #merge them into a single file per year
     for year in range(start_year, end_year + 1):
         output.add_live_msg(f'merge the files for year {year}')
-        merge_tiles(cp.getTmpDir(), descriptions[year], output)
+        merge_tiles(cp.tmp_dir, descriptions[year], output)
     
     pdf_tmps = []
     update_progress(0, output, msg='Pdf page created')
     for index, row in pts.iterrows():
-        pdf_tmp = cp.getTmpDir().joinpath(f'{filename}_{name_bands}_tmp_pts_{row["id"]}.pdf')
+        pdf_tmp = cp.tmp_dir.joinpath(f'{filename}_{name_bands}_tmp_pts_{row["id"]}.pdf')
         pdf_tmps.append(pdf_tmp)
     
         #create the resulting pdf
@@ -228,7 +228,7 @@ def run(file, pts, bands, sources, start, end, square_size, output):
             for year in range(start_year, end_year + 1):
                 
                 #laod the file 
-                file = cp.getTmpDir().joinpath(f'{descriptions[year]}.tif')
+                file = cp.tmp_dir.joinpath(f'{descriptions[year]}.tif')
                 
                 #extract the buffer bounds 
                 coords = ee_buffers[index].coordinates().get(0).getInfo()
@@ -297,9 +297,9 @@ def run(file, pts, bands, sources, start, end, square_size, output):
     
     #flush the tmp repository 
     #shutil.rmtree(cp.getTmpDir())
-    for file in cp.getTmpDir().glob('*.*'):
+    for file in cp.tmp_dir.glob('*.*'):
         file.unlink()
-    cp.getTmpDir().rmdir()
+    cp.tmp_dir.rmdir()
     
     output.add_live_msg('PDF output finished', 'success')
     
