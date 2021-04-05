@@ -42,57 +42,47 @@ class ExportData(sw.Tile):
         )
         
         # js behaviour 
-        export_btn.on_event('click', self._export_data)
+        self.btn.on_event('click', self._export_data)
         
-    def start_process(self, widget, event, data):
+    def _export_data(self, widget, event, data):
     
         # toggle the loading button
         widget.toggle_loading()
-     
-        # load the input
-        file = json.loads(tb_io.json_table)['pathname']
-        pts = tb_io.pts
-        bands = viz_io.bands
-        sources = viz_io.sources
-        start = viz_io.start_year
-        end = viz_io.end_year
-        square_size = viz_io.square_size
-        check = viz_io.check
     
         # check only validation     
-        if not output.check_input(viz_io.check, cm.export.no_input): return widget.toggle_loading()
+        if not self.output.check_input(self.viz_io.check, cm.export.no_input): return widget.toggle_loading()
     
-        try:
-            # start the exporting process 
-            pdf_file = cs.run(
-                json.loads(self.tb_io.json_table)['pathname'],
-                self.tb_io.pts,
-                self.viz_io.bands,
-                self.viz_io.sources,
-                self.viz_io.start,
-                self.viz_io.end,
-                self.viz_io.square_size,
-                self.output
-            )
+        #try:
+        # start the exporting process 
+        pdf_file = cs.run(
+            json.loads(self.tb_io.json_table)['pathname'],
+            self.tb_io.pts,
+            self.viz_io.bands,
+            self.viz_io.sources,
+            self.viz_io.start_year,
+            self.viz_io.end_year,
+            self.viz_io.square_size,
+            self.output
+        )
+    
+        # create a download btn
+        dwn = sw.DownloadBtn(cm.export.down_btn, path=str(pdf_file))
+    
+        # create a preview of the first page
+        pdf_file = str(pdf_file)
+        preview = pdf_file.replace('.pdf', '_preview.png')
         
-            # create a download btn
-            dwn = sw.DownloadBtn(cm.export.down_btn, path=pdf_file)
-        
-            # create a preview of the first page
-            pdf_file = str(pdf_file)
-            preview = pdf_file.replace('.pdf', '_preview.png')
+        with Image(filename=f'{pdf_file}[0]') as img:
+            img.background_color = Color("white")
+            img.alpha_channel = 'remove'
+            img.save(filename=preview)
             
-            with Image(filename=f'{pdf_file}[0]') as img:
-                img.background_color = Color("white")
-                img.alpha_channel = 'remove'
-                img.save(filename=preview)
-                
-            img_widget = w.Image(value=open(preview, "rb").read())
+        img_widget = w.Image(value=open(preview, "rb").read())
+
+        self.result_tile.set_content([dwn, img_widget])
     
-            self.result_tile.set_content([dwn, img_widget])
-    
-        except Exception as e: 
-            output.add_live_msg(str(e), 'error')
+        #except Exception as e: 
+        #    self.output.add_live_msg(str(e), 'error')
     
         # toggle the loading button
         widget.toggle_loading()
