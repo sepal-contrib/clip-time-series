@@ -17,12 +17,12 @@ The user can manually swithc of the usage of sentinel or landsat data.
 
 ![full_app](./doc/img/full_app.png)
 
-for more information about usage please read the [documentation](./doc/doc.md)
+for more information about usage please read the [documentation](./doc/en.rst)
 
 ## contribute
 to install the project on your SEPAL account 
 ```
-$ git clone https://github.com/12rambau/gfc_wrapper_python.git
+$ git clone https://github.com/openforis/clip-time-series.git
 ```
 
 please retreive the develop branch where all our development live
