@@ -1,9 +1,10 @@
+import datetime
 import ee 
 
 ee.Initialize()
 
-min_start_year = 2005
-max_end_year = 2020 # when changing check that the number of line and column is still adapted
+min_start_year = 1985 # launch of landsat 5
+max_end_year = datetime.datetime.now().year
 sources = ['landsat', 'sentinel']
 min_square = 500
 max_square = 10000

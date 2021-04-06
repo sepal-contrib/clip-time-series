@@ -33,13 +33,13 @@ class InputTile(sw.Tile):
             class_='mr-5 ml-5', 
             items=[i for i in range(cp.min_start_year, cp.max_end_year+1)], 
             label=cm.viz.start_year, 
-            v_model=cp.min_start_year
+            v_model=self.viz_io.start_year
         )
         max_year = v.Select(
             class_='ml-5 mr-5',
             items=[i for i in range(cp.min_start_year, cp.max_end_year+1)], 
             label=cm.viz.end_year, 
-            v_model=cp.max_end_year
+            v_model=self.viz_io.end_year
         )
         years = v.Layout(
             xs=12, 

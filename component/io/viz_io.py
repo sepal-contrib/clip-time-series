@@ -7,6 +7,6 @@ class VizIo:
         self.check = False
         self.sources = None
         self.bands = None
-        self.start_year = cp.min_start_year
+        self.start_year = 2005
         self.end_year = cp.max_end_year
         self.square_size = 2000 #in meters
