@@ -21,7 +21,7 @@ def get_dims(N):
             cols = nb_col
             lines = nb_line
 
-        return (cols, lines)
+    return (cols, lines)
 
 def getPositionPdf(i, nb_col):  
     """Return the position of the square on the pdf page"""
