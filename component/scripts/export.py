@@ -4,6 +4,7 @@ from pathlib import Path
 import time
 from glob import glob
 from urllib.request import urlretrieve
+import zipfile
 
 import pandas as pd
 import ee 
@@ -139,12 +140,12 @@ def run(file, pts, bands, sources, start, end, square_size, output):
     # load the data directly in SEPAL
     satellites = {} # contain the names of the used satellites
     task_list = []
-    total_images = (end_year-start_year)*len(ee_buffers)
+    total_images = (end_year-start_year + 1)*len(ee_buffers)
     for i, year in enumerate(range(start_year, end_year + 1)):
         
         image, satellites[year] = getImage(sources, bands, ee_multiPolygon, year)
         
-        for j, buffer in enumerate(ee_buffers):
+        for j, key in enumerate(ee_buffers):
             
             description = f"{descriptions[year]}_{j}"
             
@@ -152,16 +153,29 @@ def run(file, pts, bands, sources, start, end, square_size, output):
             
             if not dst.is_file():
                 
+                name = 'zipimage'
+                
                 link = image.getDownloadURL({
-                    'name': description,
-                    'region': buffer,
-                    'filePerBand': False
+                    'name': name,
+                    'region': ee_buffers[key],
+                    'filePerBand': False,
+                    'scale': cp.getScale(satellites[year])
                 })
                 
-                urlretrieve (link, dst)
+                tmp = cp.tmp_dir.joinpath(f'{name}.zip')
+                urlretrieve (link, tmp)
+                
+                # unzip the file 
+                with zipfile.ZipFile(tmp,"r") as zip_:
+                    data = zip_.read(zip_.namelist()[0])
+                    
+                    with dst.open('wb') as f:
+                        f.write(data)
+                
+                # remove the zip 
+                tmp.unlink()
             
-            
-            output.update_progress((i*len(ee_buffer) + j)/total_image, msg='Image loaded')
+            output.update_progress((i*len(ee_buffers) + j)/total_images, msg='Image loaded')
             
             #if drive_handler.get_files(description) == []:
             #
@@ -210,15 +224,20 @@ def run(file, pts, bands, sources, start, end, square_size, output):
         vrt_path = cp.tmp_dir.joinpath(f'{descriptions[year]}.vrt')
         
         # retreive the filepaths
-        filepaths[f for f in cp.tmp_dir.glob(f'{descriptions[year]}_*.tif')]
+        filepaths = [str(f) for f in cp.tmp_dir.glob(f'{descriptions[year]}_*.tif')]
         
         # build the vrt
-        gdal.BuildVRT(vrt_path, filepaths)
+        ds = gdal.BuildVRT(str(vrt_path), filepaths)
+        ds.FlushCache()
         
-    nb_col, nb_line = cs.get_dims(end_year - start_year)
+        # check that the file was effectively created (gdal doesn't raise errors)
+        if not vrt_path.is_file():
+            raise Exception(f"the vrt {vrt_path} was not created")
+        
+    nb_col, nb_line = cp.get_dims(end_year - start_year)
     
     pdf_tmps = []
-    update_progress(0, output, msg='Pdf page created')
+    output.update_progress(0, msg='Pdf page created')
     for index, row in pts.iterrows():
         pdf_tmp = cp.tmp_dir.joinpath(f'{filename}_{name_bands}_tmp_pts_{row["id"]}.pdf')
         pdf_tmps.append(pdf_tmp)
@@ -246,7 +265,7 @@ def run(file, pts, bands, sources, start, end, square_size, output):
                 shape = box(bl[0], bl[1], tr[0], tr[1])
             
                 with rio.open(file) as f:
-                    data = src.read(window=from_bounds(bl[0], bl[1], rtr[0], tr[1], f.transform))
+                    data = f.read(window=from_bounds(bl[0], bl[1], tr[0], tr[1], f.transform))
                 
                 bands = [] 
                 for i in range(3):
