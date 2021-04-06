@@ -1,3 +1,6 @@
+import ee 
+
+ee.Initialize()
 
 min_start_year = 2005
 max_end_year = 2020 # when changing check that the number of line and column is still adapted
