@@ -217,7 +217,7 @@ def run(file, pts, bands, sources, start, end, square_size, output):
     # flush the tmp repository 
     for file in cp.tmp_dir.glob('*.*'):
         file.unlink()
-    cp.tmp_dir.rmdir()
+    #cp.tmp_dir.rmdir() # if I remove the folder I will not be able to relaunch the app without relaunhing everything
     
     output.add_live_msg('PDF output finished', 'success')
     
