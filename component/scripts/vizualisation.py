@@ -29,7 +29,7 @@ def set_msg(pts, bands_combo, source_name, basename, start, end, square_size):
                     Using images from <b>{start}</b> to <b>{end}</b>
                 </li>
                 <li>
-                    Using squares of <b>{square_size}x{square_size}</b> km\u00B2  
+                    Using squares of <b>{square_size}x{square_size}</b> m\u00B2  
                 </li>
                 <li>
                     Saved in a file using <b>{basename}</b> as a basename
