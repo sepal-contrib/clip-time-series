@@ -51,38 +51,47 @@ class ExportData(sw.Tile):
     
         # check only validation     
         if not self.output.check_input(self.viz_io.check, cm.export.no_input): return widget.toggle_loading()
-    
-        #try:
-        # start the exporting process 
-        pdf_file = cs.run(
-            json.loads(self.tb_io.json_table)['pathname'],
-            self.tb_io.pts,
-            self.viz_io.bands,
-            self.viz_io.sources,
-            self.viz_io.start_year,
-            self.viz_io.end_year,
-            self.viz_io.square_size,
-            self.output
-        )
-    
-        # create a download btn
-        dwn = sw.DownloadBtn(cm.export.down_btn, path=str(pdf_file))
-    
-        # create a preview of the first page
-        pdf_file = str(pdf_file)
-        preview = pdf_file.replace('.pdf', '_preview.png')
         
-        with Image(filename=f'{pdf_file}[0]') as img:
-            img.background_color = Color("white")
-            img.alpha_channel = 'remove'
-            img.save(filename=preview)
-            
-        img_widget = w.Image(value=open(preview, "rb").read())
-
-        self.result_tile.set_content([dwn, img_widget])
+        # rename variable for the sake of simplified writting 
+        file = json.loads(self.tb_io.json_table)['pathname']
+        pts = self.tb_io.pts
+        bands = self.viz_io.bands
+        sources = self.viz_io.sources
+        start = self.viz_io.start_year
+        end = self.viz_io.end_year
+        square_size = self.viz_io.square_size
     
-        #except Exception as e: 
-        #    self.output.add_live_msg(str(e), 'error')
+        try:
+        
+            if cs.is_pdf(file, bands, start, end):
+                self.output.add_live_msg('Pdf already exist', 'success')
+                widget.toggle_loading()
+                return
+            
+            # create the vrt from gee images 
+            vrt_list, title_list = cs.get_gee_vrt(pts, start, end, square_size, file, bands, sources, self.output)
+            
+            # export as pdf 
+            pdf_file = cs.get_pdf(file, start, end, square_size, vrt_list, title_list, bands, pts, self.output)
+    
+            # create a download btn
+            dwn = sw.DownloadBtn(cm.export.down_btn, path=str(pdf_file))
+    
+            # create a preview of the first page
+            pdf_file = str(pdf_file)
+            preview = pdf_file.replace('.pdf', '_preview.png')
+            
+            with Image(filename=f'{pdf_file}[0]') as img:
+                img.background_color = Color("white")
+                img.alpha_channel = 'remove'
+                img.save(filename=preview)
+                
+            img_widget = w.Image(value=open(preview, "rb").read())
+    
+            self.result_tile.set_content([dwn, img_widget])
+    
+        except Exception as e: 
+            self.output.add_live_msg(str(e), 'error')
     
         # toggle the loading button
         widget.toggle_loading()
