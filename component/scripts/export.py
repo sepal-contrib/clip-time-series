@@ -1,6 +1,4 @@
 from pathlib import Path
-from urllib.request import urlretrieve
-import zipfile
 
 import ee 
 from matplotlib.backends.backend_pdf import PdfPages
@@ -10,40 +8,14 @@ from rasterio.windows import from_bounds
 import numpy as np
 from shapely import geometry as sg
 from PyPDF2 import PdfFileMerger, PdfFileReader
-from osgeo import gdal
+import geopandas as gpd
 
 from component import parameter as cp
 
-ee.Initialize()    
+ee.Initialize()
 
-def getImage(sources, bands, mask, year):
-    
-    start = str(year) + '-01-01'
-    end = str(year) + '-12-31'
-    
-    #priority selector for satellites
-    satellites = cp.getSatellites(sources, year)
-    for satelliteId in satellites:
-        dataset = ee.ImageCollection(satellites[satelliteId]) \
-            .filterDate(start, end) \
-            .filterBounds(mask) \
-            .map(cp.getCloudMask(satelliteId))
-        
-        if dataset.size().getInfo() > 0:
-            satellite = satelliteId
-            break
-            
-    clip = dataset.median().clip(mask).select(cp.getAvailableBands()[bands][satelliteId])
-    
-    return (clip, satelliteId)
-    
-
-def run(file, pts, bands, sources, start, end, square_size, output):
-    
-    # check dates 
-    start_year = max(start, cp.min_start_year)
-    end_year = min(end, cp.max_end_year)
-    range_year = [y for y in range(start_year, end_year + 1)]
+def is_pdf(file, bands, start, end):
+    """check if the pdf is already existing, return false if not"""
     
     # get the filename
     filename = Path(file).stem
@@ -52,87 +24,36 @@ def run(file, pts, bands, sources, start, end, square_size, output):
     name_bands = '_'.join(bands.split(', '))
     
     # pdf name 
-    pdf_file = cp.result_dir.joinpath(f'{filename}_{name_bands}_{start_year}_{end_year}.pdf')
+    pdf_file = cp.result_dir.joinpath(f'{filename}_{name_bands}_{start}_{end}.pdf')
     
-    if pdf_file.is_file():
-        output.add_live_msg('Pdf already exist', 'success')
-        return pdf_file
+    return pdf_file.is_file()
     
-    # transform the stored points into ee points 
-    ee_pts = [ ee.Geometry.Point(row.lng, row.lat) for _, row in pts.iterrows()]
+
+def get_pdf(file, start, end, square_size, vrt_list, title_list, bands, pts, output):
     
-    # create the square buffers 
-    ee_buffers = [ee_pt.buffer(square_size).bounds() for ee_pt in ee_pts]
+    # check dates
+    range_year = [y for y in range(start, end + 1)]
     
-    # create a multipolygon mask
-    ee_multiPolygon = ee.Geometry.MultiPolygon(ee_buffers).dissolve(maxError=100)     
-            
-    # create a filename list 
-    descriptions = {}
-    for year in range_year:
-        descriptions[year] = f'{filename}_{name_bands}_{year}'
-        
-    # load the data directly in SEPAL
-    satellites = {} # contain the names of the used satellites
-    task_list = []
-    total_images = (end_year - start_year + 1)*(len(ee_buffers)-1)
-    for i, year in enumerate(range_year):
-        
-        image, satellites[year] = getImage(sources, bands, ee_multiPolygon, year)
-        
-        for j, buffer in enumerate(ee_buffers):
-            
-            description = f"{descriptions[year]}_{j}"
-            
-            dst = cp.tmp_dir.joinpath(f'{description}.tif')
-            
-            if not dst.is_file():
-                
-                name = 'zipimage'
-                
-                link = image.getDownloadURL({
-                    'name': name,
-                    'region': buffer,
-                    'filePerBand': False,
-                    'scale': cp.getScale(satellites[year])
-                })
-                
-                tmp = cp.tmp_dir.joinpath(f'{name}.zip')
-                urlretrieve (link, tmp)
-                
-                # unzip the file 
-                with zipfile.ZipFile(tmp,"r") as zip_:
-                    data = zip_.read(zip_.namelist()[0])
-                    
-                    with dst.open('wb') as f:
-                        f.write(data)
-                
-                # remove the zip 
-                tmp.unlink()
-            
-            output.update_progress((i*(len(ee_buffers)-1) + j)/total_images, msg='Image loaded')
+    # get the filename
+    filename = Path(file).stem
     
-    # create a single vrt per year 
-    for year in range_year:
-        # retreive the vrt 
-        vrt_path = cp.tmp_dir.joinpath(f'{descriptions[year]}.vrt')
-        
-        # retreive the filepaths
-        filepaths = [str(f) for f in cp.tmp_dir.glob(f'{descriptions[year]}_*.tif')]
-        
-        # build the vrt
-        ds = gdal.BuildVRT(str(vrt_path), filepaths)
-        ds.FlushCache()
-        
-        # check that the file was effectively created (gdal doesn't raise errors)
-        if not vrt_path.is_file():
-            raise Exception(f"the vrt {vrt_path} was not created")
-        
-    nb_col, nb_line = cp.get_dims(end_year - start_year)
+    # extract the bands to use them in names 
+    name_bands = '_'.join(bands.split(', '))
+    
+    # pdf name 
+    pdf_file = cp.result_dir.joinpath(f'{filename}_{name_bands}_{start}_{end}.pdf')
+    
+    # create a geopandas of square buffer 
+    gdf_buffers = pts.to_crs("EPSG:3857")
+    gdf_buffers['geometry'] = gdf_buffers.buffer(square_size/2, cap_style = 3)
+    gdf_buffers = gdf_buffers.to_crs("EPSG:4326")   
+    
+    # get the disposition in col and line    
+    nb_col, nb_line = cp.get_dims(end - start)
     
     pdf_tmps = []
     output.update_progress(0, msg='Pdf page created')
-    for index, row in pts.iterrows():
+    for index, row in gdf_buffers.iterrows():
         
         pdf_tmp = cp.tmp_dir.joinpath(f'{filename}_{name_bands}_tmp_pts_{row["id"]}.pdf')
         pdf_tmps.append(pdf_tmp)
@@ -145,19 +66,19 @@ def run(file, pts, bands, sources, start, end, square_size, output):
             fig, axes = plt.subplots(nb_line, nb_col, figsize=(11.69,8.27), dpi=500)
             fig.suptitle(page_title, fontsize=16, fontweight ="bold")
             fig.set_tight_layout(True) 
+            
             # display the images in a fig and export it as a pdf page
             placement_id = 0
             for year in range_year:
                 
                 # load the file 
-                file = cp.tmp_dir.joinpath(f'{descriptions[year]}.vrt')
+                file = vrt_list[year]
                 
                 # extract the buffer bounds 
-                coords = ee_buffers[index].coordinates().get(0).getInfo()
-                bl, tr = coords[0], coords[2]
+                minx, miny, maxx, maxy = row['geometry'].bounds
             
                 with rio.open(file) as f:
-                    data = f.read(window=from_bounds(bl[0], bl[1], tr[0], tr[1], f.transform))
+                    data = f.read(window=from_bounds(minx, miny, maxx, maxy, f.transform))
                 
                 bands = [] 
                 for i in range(3):
@@ -183,7 +104,7 @@ def run(file, pts, bands, sources, start, end, square_size, output):
                 place = cp.getPositionPdf(placement_id, nb_col) 
                 ax = axes[place[0], place[1]]
                 ax.imshow(data, interpolation='nearest')
-                ax.set_title(str(year) + ' ' + cp.getShortname(satellites[year]), x=.0, y=1.0, fontsize='small', backgroundcolor='white', ha='left')
+                ax.set_title(str(year) + ' ' + title_list[year], x=.0, y=1.0, fontsize='small', backgroundcolor='white', ha='left')
                 ax.axis('off')
                 ax.set_aspect('equal', 'box')
                 
@@ -217,7 +138,7 @@ def run(file, pts, bands, sources, start, end, square_size, output):
     # flush the tmp repository 
     for file in cp.tmp_dir.glob('*.*'):
         file.unlink()
-    #cp.tmp_dir.rmdir() # if I remove the folder I will not be able to relaunch the app without relaunhing everything
+    #cp.tmp_dir.rmdir() # if I remove the folder I will not be able to relaunch the app without relaunching everything
     
     output.add_live_msg('PDF output finished', 'success')
     
