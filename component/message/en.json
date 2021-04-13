@@ -46,7 +46,9 @@
         "no_start": "Please provide a start year",
         "no_end": "Please provide a end year",
         "no_square": "Please provide a square size",
-        "wrong_date": "Start year cannot be higher than end year"
+        "wrong_date": "Start year cannot be higher than end year",
+        "no_driver": "No dirver has been provided, please choose between GEE and Planet",
+        "no_key": "you are using the planet driver, please provide an API key"
     },
     "table": {
         "title": "Select a file",
@@ -82,6 +84,9 @@
         "title": "Export results"
     },
     "planet": {
-        "key_label": "Planet key" 
+        "key_label": "Planet key",
+        "invalid_key": "The current key is invalid, please provide a valid Planet key",
+        "test_key": "We are currently checking your API key",
+        "valid_key": "Your key have been validated"
     }
 }

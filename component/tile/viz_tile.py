@@ -73,6 +73,7 @@ class InputTile(sw.Tile):
             .bind(self.bands, viz_io, 'bands') \
             .bind(self.start, viz_io, 'start_year') \
             .bind(self.end, viz_io, 'end_year') \
+            .bind(self.driver, viz_io, 'driver') \
             .bind(square_size, viz_io, 'square_size')
         
         # create the tile 
@@ -94,6 +95,7 @@ class InputTile(sw.Tile):
         widget.toggle_loading()
         
         # load the input 
+        driver = self.viz_io.driver
         file = json.loads(self.tb_io.json_table)['pathname']
         pts = self.tb_io.pts
         bands = self.viz_io.bands
@@ -101,11 +103,12 @@ class InputTile(sw.Tile):
         start = self.viz_io.start_year
         end = self.viz_io.end_year
         square_size = self.viz_io.square_size
+        planet_key = self.viz_io.planet_key
         
         # check input
+        if not self.output.check_input(driver, cm.viz.no_driver): return widget.toggle_loading()
         if not self.output.check_input(file, cm.viz.no_pts): return widget.toggle_loading()
         if not self.output.check_input(bands, cm.viz.no_bands): return widget.toggle_loading()
-        if not self.output.check_input(sources, cm.viz.no_sources): return widget.toggle_loading()
         if not self.output.check_input(start, cm.viz.no_start): return widget.toggle_loading()
         if not self.output.check_input(end, cm.viz.no_end): return widget.toggle_loading()
         if not self.output.check_input(square_size, cm.viz.no_square): return widget.toggle_loading()
@@ -113,21 +116,25 @@ class InputTile(sw.Tile):
             self.output.add_msg(cm.viz.wrong_date, 'error')
             return widget.toggle_loading()
         
-        # security when user remove all satellites (sources = [])
-        if not len(sources) > 0: 
-            self.output.add_msg(cm.viz.no_source, 'error')
-            return widget.toggle_loading()
+        # test specific to drivers
+        if driver == 'planet':
+            if not self.output.check_input(planet_key, cm.viz.no_key): return widget.toggle_loading()
+        elif driver == 'gee':
+            if not self.output.check_input(sources, cm.viz.no_sources): return widget.toggle_loading()
         
-        try:
-            # generate a sum-up of the inputs
-            msg = cs.set_msg(pts, bands, ' & '.join(sources), Path(file).stem, start, end, square_size)
-            self.output.add_msg(msg, 'warning')
+        #try:
+        if driver == 'planet':
+            cs.validate_key(planet_key, self.output)
+            
+        # generate a sum-up of the inputs
+        msg = cs.set_msg(pts, bands, sources, Path(file).stem, start, end, square_size, driver)
+        self.output.add_msg(msg, 'warning')
         
-            # change the checked value 
-            self.viz_io.check = True
+        # change the checked value 
+        self.viz_io.check = True
         
-        except Exception as e: 
-            self.output.add_live_msg(str(e), 'error')
+        #except Exception as e: 
+        #    self.output.add_live_msg(str(e), 'error')
             
         # toggle the loading button
         widget.toggle_loading()
