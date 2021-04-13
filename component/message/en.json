@@ -80,5 +80,8 @@
     },
     "result": {
         "title": "Export results"
+    },
+    "planet": {
+        "key_label": "Planet key" 
     }
 }
