@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 from sepal_ui import sepalwidgets as sw 
+from sepal_ui.scripts import utils as su
 import ipyvuetify as v
 
 from component.message import cm
@@ -17,34 +18,43 @@ class InputTile(sw.Tile):
         self.tb_io = tb_io
         
         # create the widgets
-        sources = v.Select(
+        self.driver = v.RadioGroup(
+            row= True,
+            v_model = None,
+            children = [v.Radio(key=i, label=n, value=n) for i, n in enumerate(cp.drivers)]
+        )
+        
+        self.sources = v.Select(
             items=cp.sources, 
             label=cm.viz.sources, 
             v_model=None, 
             multiple=True,
             chips=True
         )
-        bands = v.Select(
+        
+        self.planet_key = sw.PasswordField(label = cm.planet.key_label)
+        
+        self.bands = v.Select(
             items=[*cp.getAvailableBands()], 
             label=cm.viz.bands, 
             v_model=None
         )
-        min_year = v.Select(
+        self.start = v.Select(
             class_='mr-5 ml-5', 
-            items=[i for i in range(cp.min_start_year, cp.max_end_year+1)], 
+            items=[y for y in range(cp.gee_min_start_year, cp.gee_max_end_year+1)], 
             label=cm.viz.start_year, 
             v_model=self.viz_io.start_year
         )
-        max_year = v.Select(
+        self.end = v.Select(
             class_='ml-5 mr-5',
-            items=[i for i in range(cp.min_start_year, cp.max_end_year+1)], 
+            items=[y for y in range(cp.gee_min_start_year, cp.gee_max_end_year+1)], 
             label=cm.viz.end_year, 
             v_model=self.viz_io.end_year
         )
         years = v.Layout(
             xs=12, 
             row=True,  
-            children=[min_year, max_year]
+            children=[self.start, self.end]
         )
         square_size = v.Slider(
             step=500, 
@@ -58,10 +68,11 @@ class InputTile(sw.Tile):
         
         # bind the inputs
         output = sw.Alert() \
-            .bind(sources, viz_io, 'sources') \
-            .bind(bands, viz_io, 'bands') \
-            .bind(min_year, viz_io, 'start_year') \
-            .bind(max_year, viz_io, 'end_year') \
+            .bind(self.sources, viz_io, 'sources') \
+            .bind(self.planet_key, viz_io, 'planet_key', secret = True) \
+            .bind(self.bands, viz_io, 'bands') \
+            .bind(self.start, viz_io, 'start_year') \
+            .bind(self.end, viz_io, 'end_year') \
             .bind(square_size, viz_io, 'square_size')
         
         # create the tile 
@@ -69,12 +80,13 @@ class InputTile(sw.Tile):
             id_ = "viz_widget",
             title = cm.viz.title,
             btn = sw.Btn(cm.viz.btn),
-            inputs = [sources, bands, years, square_size],
+            inputs = [self.driver, self.sources, self.planet_key, self.bands, years, square_size],
             output = output
         )
         
         # js behaviour 
-        self.btn.on_event('click', self._display_data)  
+        self.btn.on_event('click', self._display_data) 
+        self.driver.observe(self._on_driver_change, 'v_model')
         
     def _display_data(self, widget, event, data):
     
@@ -121,3 +133,52 @@ class InputTile(sw.Tile):
         widget.toggle_loading()
         
         return 
+    
+    def _on_driver_change(self, change):
+        """adapt the inputs to the requested sources"""
+        
+        # empty the datas 
+        self.reset_inputs()
+        
+        if change['new'] == 'planet':
+            # remove source
+            su.hide_component(self.sources)
+            
+            # display password
+            self.planet_key.show()
+            
+            # change bands options
+            self.bands.items = cp.planet_bands_combo
+            
+            # adapt dates to available data 
+            self.start.items = [y for y in range(cp.planet_min_start_year, cp.planet_max_end_year+1)]
+            self.end.items = [y for y in range(cp.planet_min_start_year, cp.planet_max_end_year+1)]
+            
+        elif change['new'] == 'gee':
+            # remove password 
+            self.planet_key.hide()
+            
+            # add source
+            su.show_component(self.sources)
+            
+            # change band options
+            self.bands.items=[*cp.getAvailableBands()]
+            
+            # adapt dates to available data
+            self.start.items = [y for y in range(cp.gee_min_start_year, cp.gee_max_end_year+1)]
+            self.end.items = [y for y in range(cp.gee_min_start_year, cp.gee_max_end_year+1)]
+            
+        return
+        
+    def reset_inputs(self):
+        """reset all the inputs"""
+        
+        self.sources.v_model = None
+        self.planet_key.v_model = '' # I cannot set to None it make bind bugging
+        self.bands.v_model = None
+        self.start.v_model = None
+        self.end.v_model = None
+        
+        return 
+        
+        
