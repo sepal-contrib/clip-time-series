@@ -19,4 +19,4 @@ class VizIo:
         
         # planet inputs 
         self.planet_key = None
-        
+        self.semester = None

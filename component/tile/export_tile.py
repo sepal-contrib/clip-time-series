@@ -60,6 +60,7 @@ class ExportData(sw.Tile):
         start = self.viz_io.start_year
         end = self.viz_io.end_year
         square_size = self.viz_io.square_size
+        semester = self.viz_io.semester
     
         #try:
         
@@ -70,7 +71,7 @@ class ExportData(sw.Tile):
         
         # create the vrt from gee images 
         if self.viz_io.driver == 'planet':
-            vrt_list, title_list = cs.get_planet_vrt(pts, start, end, square_size, file, bands, self.output)
+            vrt_list, title_list = cs.get_planet_vrt(pts, start, end, square_size, file, bands, semester, self.output)
         elif self.viz_io.driver == 'gee':
             vrt_list, title_list = cs.get_gee_vrt(pts, start, end, square_size, file, bands, sources, self.output)
             

@@ -19,6 +19,7 @@ class InputTile(sw.Tile):
         
         # create the widgets
         self.driver = v.RadioGroup(
+            label = cm.viz.driver,
             row= True,
             v_model = self.viz_io.driver,
             children = [v.Radio(key=i, label=n, value=n) for i, n in enumerate(cp.drivers)]
@@ -33,6 +34,13 @@ class InputTile(sw.Tile):
         )
         
         self.planet_key = sw.PasswordField(label = cm.planet.key_label).hide()
+        self.semester = v.RadioGroup(
+            label = cm.viz.semester,
+            row= True,
+            v_model = None,
+            children = [v.Radio(label=cp.planet_semesters[n], value=n) for n in [*cp.planet_date_ranges[cp.planet_min_start_year]]]
+        )
+        su.hide_component(self.semester)
         
         self.bands = v.Select(
             items=[*cp.getAvailableBands()], 
@@ -74,14 +82,15 @@ class InputTile(sw.Tile):
             .bind(self.start, viz_io, 'start_year') \
             .bind(self.end, viz_io, 'end_year') \
             .bind(self.driver, viz_io, 'driver') \
-            .bind(square_size, viz_io, 'square_size')
+            .bind(square_size, viz_io, 'square_size') \
+            .bind(self.semester, viz_io, 'semester')
         
         # create the tile 
         super().__init__(
             id_ = "viz_widget",
             title = cm.viz.title,
             btn = sw.Btn(cm.viz.btn),
-            inputs = [self.driver, self.sources, self.planet_key, self.bands, years, square_size],
+            inputs = [self.driver, self.sources, self.planet_key, self.bands, years, self.semester, square_size],
             output = output
         )
         
@@ -104,6 +113,7 @@ class InputTile(sw.Tile):
         end = self.viz_io.end_year
         square_size = self.viz_io.square_size
         planet_key = self.viz_io.planet_key
+        semester = self.viz_io.semester
         
         # check input
         if not self.output.check_input(driver, cm.viz.no_driver): return widget.toggle_loading()
@@ -119,6 +129,7 @@ class InputTile(sw.Tile):
         # test specific to drivers
         if driver == 'planet':
             if not self.output.check_input(planet_key, cm.viz.no_key): return widget.toggle_loading()
+            if not self.output.check_input(semester, cm.viz.no_semester): return widget.toggle_loading()
         elif driver == 'gee':
             if not self.output.check_input(sources, cm.viz.no_sources): return widget.toggle_loading()
         
@@ -154,6 +165,10 @@ class InputTile(sw.Tile):
             # display password
             self.planet_key.show()
             
+            # display semesters 
+            su.show_component(self.semester)
+            self.semester.v_model = 'S1'
+            
             # change bands options and select the default rgb
             self.bands.items = [*cp.planet_bands_combo]
             self.bands.v_model = [*cp.planet_bands_combo][0]
@@ -167,6 +182,9 @@ class InputTile(sw.Tile):
         elif change['new'] == 'gee':
             # remove password 
             self.planet_key.hide()
+            
+            # remove semester 
+            su.hide_component(self.semester)
             
             # add source and default to landsat
             su.show_component(self.sources)
@@ -192,6 +210,7 @@ class InputTile(sw.Tile):
         self.bands.v_model = None
         self.start.v_model = None
         self.end.v_model = None
+        self.semester.v_model = None
         
         return 
         
