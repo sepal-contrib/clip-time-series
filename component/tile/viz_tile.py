@@ -155,7 +155,7 @@ class InputTile(sw.Tile):
             self.planet_key.show()
             
             # change bands options
-            self.bands.items = cp.planet_bands_combo
+            self.bands.items = [*cp.planet_bands_combo]
             
             # adapt dates to available data 
             self.start.items = [y for y in range(cp.planet_min_start_year, cp.planet_max_end_year+1)]
