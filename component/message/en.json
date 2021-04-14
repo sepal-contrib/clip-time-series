@@ -84,7 +84,11 @@
         "title": "Export results"
     },
     "planet": {
+        "grid": "Computing planet grid",
         "key_label": "Planet key",
+        "export": "exporting the quads",
+        "file_exist": "the file: {} already exist",
+        "down_file": "Downloading file: {}",
         "invalid_key": "The current key is invalid, please provide a valid Planet key",
         "test_key": "We are currently checking your API key",
         "valid_key": "Your key have been validated"
