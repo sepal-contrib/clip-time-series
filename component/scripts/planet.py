@@ -66,11 +66,11 @@ def validate_key(key, out):
     
     return
 
-def download_quads(filename, year, grid, bands, out, iy, total_img):
+def download_quads(filename, year, grid, bands, semester, out, iy, total_img):
     """export each quad to the appropriate folder"""
     
     # get the mosaic from the mosaic name
-    mosaic_name = planet.mosaic_name.format(cp.planet_date_ranges[year])
+    mosaic_name = planet.mosaic_name.format(cp.planet_date_ranges[year][semester])
     mosaics = planet.client.get_mosaics().get()['mosaics'] 
     mosaic_names = [m['name'] for m in mosaics]
     mosaic = mosaics[mosaic_names.index(mosaic_name)]
@@ -129,7 +129,7 @@ def download_quads(filename, year, grid, bands, out, iy, total_img):
     
     return file_list
 
-def get_planet_vrt(pts, start, end, square_size, file, bands, out):
+def get_planet_vrt(pts, start, end, square_size, file, bands, semester, out):
     
     # get the filename
     filename = Path(file).stem
@@ -151,7 +151,7 @@ def get_planet_vrt(pts, start, end, square_size, file, bands, out):
     for i, year in enumerate(range_year):
         
         # download the requested images 
-        file_list = download_quads(filename, year, planet_grid, bands, out, i, total_img)
+        file_list = download_quads(filename, year, planet_grid, bands, semester, out, i, total_img)
         
         # create a vrt out of it 
         vrt_path = cp.tmp_dir.joinpath(f'{filename}_{year}.vrt')
@@ -165,7 +165,7 @@ def get_planet_vrt(pts, start, end, square_size, file, bands, out):
         vrt_list[year] = vrt_path
         
     # create a title list to be consistent
-    title_list = {y: planet.data for y in range_year}
+    title_list = {y: f'{planet.data} {cp.planet_semesters[semester]}' for y in range_year}
     
     return vrt_list, title_list
         

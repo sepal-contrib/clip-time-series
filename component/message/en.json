@@ -35,6 +35,8 @@
         "sources": "select the sources satellites",
         "bands": "select the band to be displayed",
         "points": "Display Point {}: (lat: {:.5f}, lng: {:.5f})",
+        "driver": "Select driver: ",
+        "semester": "Select semester: ",
         "no_pts": "No points of observation are registered. Please go back to step 1",
         "no_bands": "Please provide a the bands you want to observe on your images",
         "no_sources": "please provide the satellite sources",
@@ -48,7 +50,8 @@
         "no_square": "Please provide a square size",
         "wrong_date": "Start year cannot be higher than end year",
         "no_driver": "No dirver has been provided, please choose between GEE and Planet",
-        "no_key": "you are using the planet driver, please provide an API key"
+        "no_key": "you are using the planet driver, please provide an API key",
+        "no_semester": "Please proved a semester to display"
     },
     "table": {
         "title": "Select a file",
