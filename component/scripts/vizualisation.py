@@ -2,8 +2,11 @@ import traitlets
 
 import ipyvuetify as v
 
-def set_msg(pts, bands_combo, source_name, basename, start, end, square_size):
+def set_msg(pts, bands_combo, sources, basename, start, end, square_size, driver):
     
+    # transform sources in a str 
+    source_name = ' & '.join(sources) if type(sources) == list else None
+        
     nb_pts = len(pts)
     
     #compute the surface 
@@ -21,7 +24,7 @@ def set_msg(pts, bands_combo, source_name, basename, start, end, square_size):
                     <b>{nb_pts}</b> points distributed on <b>{surface:.2f}</b> km\u00B2
                 </li>
                 <li>
-                    Using the images coming from <b>{source_name}</b> satellites
+                    Using the images coming from <b>{source_name if source_name else driver}</b>
                 <li>
                     Using the <b>{bands_combo}</b> band combination
                 </li>
