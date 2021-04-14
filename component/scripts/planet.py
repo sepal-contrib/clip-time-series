@@ -66,10 +66,8 @@ def validate_key(key, out):
     
     return
 
-def download_quads(filename, year, grid, bands, out):
+def download_quads(filename, year, grid, bands, out, iy, total_img):
     """export each quad to the appropriate folder"""
-    
-    out.add_msg(cm.planet.export)
     
     # get the mosaic from the mosaic name
     mosaic_name = planet.mosaic_name.format(cp.planet_date_ranges[year])
@@ -83,50 +81,51 @@ def download_quads(filename, year, grid, bands, out):
         quads.append(f'{int(row.x):04d}-{int(row.y):04d}')
         
     file_list = []
-    for quad_id in quads:
+    for i, quad_id in enumerate(quads):
         
         # check file existence 
         file = cp.tmp_dir.joinpath(f'{filename}_{year}_{quad_id}.tif')
         file_list.append(str(file))
         
-        if file.is_file():
-            out.add_msg(cm.planet.file_exist.format(file))
-            continue
+        if not file.is_file():
         
-        tmp_file = cp.tmp_dir.joinpath(f'{filename}_{year}_{quad_id}_tmp.tif')
-        out.add_msg(cm.planet.down_file.format(tmp_file))
-        quad = planet.client.get_quad_by_id(mosaic, quad_id).get()
-        planet.client.download_quad(quad).get_body().write(tmp_file)
+            tmp_file = cp.tmp_dir.joinpath(f'{filename}_{year}_{quad_id}_tmp.tif')
+            quad = planet.client.get_quad_by_id(mosaic, quad_id).get()
+            planet.client.download_quad(quad).get_body().write(tmp_file)
+            
+            with rio.open(tmp_file) as src:
+                
+                # adapt the file to only keep the 3 required bands
+                data = src.read(cp.planet_bands_combo[bands])
+                
+                # reproject the image in EPSG:4326
+                dst_crs = 'EPSG:4326'
+                transform, width, height = calculate_default_transform(
+                    src.crs, 
+                    dst_crs, 
+                    src.width, 
+                    src.height, 
+                    *src.bounds
+                )
+                
+                kwargs = src.meta.copy()
+                kwargs.update({
+                    'count': 3,
+                    'crs': dst_crs,
+                    'transform': transform,
+                    'width': width,
+                    'height': height
+                })
+                
+                with rio.open(file, 'w', **kwargs) as dst:
+                    dst.write(data)
+                    
+            # remove the tmp file
+            tmp_file.unlink()
         
-        with rio.open(tmp_file) as src:
-            
-            # adapt the file to only keep the 3 required bands
-            data = src.read(cp.planet_bands_combo[bands])
-            
-            # reproject the image in EPSG:4326
-            dst_crs = 'EPSG:4326'
-            transform, width, height = calculate_default_transform(
-                src.crs, 
-                dst_crs, 
-                src.width, 
-                src.height, 
-                *src.bounds
-            )
-            
-            kwargs = src.meta.copy()
-            kwargs.update({
-                'count': 3,
-                'crs': dst_crs,
-                'transform': transform,
-                'width': width,
-                'height': height
-            })
-            
-            with rio.open(file, 'w', **kwargs) as dst:
-                dst.write(data)
-        
-        #remove the tmp file
-        tmp_file.unlink()
+        # update the loading bar 
+        progress = (iy*(len(quads)-1) + i)/total_img
+        out.update_progress(progress, msg='Image loaded')
     
     return file_list
 
@@ -148,11 +147,11 @@ def get_planet_vrt(pts, start, end, square_size, file, bands, out):
     
     # create a vrt for each year 
     vrt_list = {}
-    total_img = 
+    total_img = (end - start + 1)*(len(planet_grid)-1)
     for i, year in enumerate(range_year):
         
         # download the requested images 
-        file_list = download_quads(filename, year, planet_grid, bands, out, i)
+        file_list = download_quads(filename, year, planet_grid, bands, out, i, total_img)
         
         # create a vrt out of it 
         vrt_path = cp.tmp_dir.joinpath(f'{filename}_{year}.vrt')
@@ -164,8 +163,6 @@ def get_planet_vrt(pts, start, end, square_size, file, bands, out):
             raise Exception(f"the vrt {vrt_path} was not created")
         
         vrt_list[year] = vrt_path
-        
-        out.update_progress(i/len(range_year), msg='Image loaded')
         
     # create a title list to be consistent
     title_list = {y: planet.data for y in range_year}
