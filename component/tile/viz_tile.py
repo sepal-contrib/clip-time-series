@@ -20,24 +20,24 @@ class InputTile(sw.Tile):
         # create the widgets
         self.driver = v.RadioGroup(
             row= True,
-            v_model = None,
+            v_model = self.viz_io.driver,
             children = [v.Radio(key=i, label=n, value=n) for i, n in enumerate(cp.drivers)]
         )
         
         self.sources = v.Select(
             items=cp.sources, 
             label=cm.viz.sources, 
-            v_model=None, 
+            v_model=self.viz_io.sources, 
             multiple=True,
             chips=True
         )
         
-        self.planet_key = sw.PasswordField(label = cm.planet.key_label)
+        self.planet_key = sw.PasswordField(label = cm.planet.key_label).hide()
         
         self.bands = v.Select(
             items=[*cp.getAvailableBands()], 
             label=cm.viz.bands, 
-            v_model=None
+            v_model=self.viz_io.bands
         )
         self.start = v.Select(
             class_='mr-5 ml-5', 
@@ -61,7 +61,7 @@ class InputTile(sw.Tile):
             min=cp.min_square, 
             max=cp.max_square, 
             label=cm.viz.square_size, 
-            v_model=2000, 
+            v_model=self.viz_io.square_size, 
             thumb_label='always', 
             class_='mt-5'
         )
@@ -122,19 +122,19 @@ class InputTile(sw.Tile):
         elif driver == 'gee':
             if not self.output.check_input(sources, cm.viz.no_sources): return widget.toggle_loading()
         
-        #try:
-        if driver == 'planet':
-            cs.validate_key(planet_key, self.output)
+        try:
+            if driver == 'planet':
+                cs.validate_key(planet_key, self.output)
             
-        # generate a sum-up of the inputs
-        msg = cs.set_msg(pts, bands, sources, Path(file).stem, start, end, square_size, driver)
-        self.output.add_msg(msg, 'warning')
+            # generate a sum-up of the inputs
+            msg = cs.set_msg(pts, bands, sources, Path(file).stem, start, end, square_size, driver)
+            self.output.add_msg(msg, 'warning')
         
-        # change the checked value 
-        self.viz_io.check = True
+            # change the checked value 
+            self.viz_io.check = True
         
-        #except Exception as e: 
-        #    self.output.add_live_msg(str(e), 'error')
+        except Exception as e: 
+            self.output.add_live_msg(str(e), 'error')
             
         # toggle the loading button
         widget.toggle_loading()
@@ -154,26 +154,33 @@ class InputTile(sw.Tile):
             # display password
             self.planet_key.show()
             
-            # change bands options
+            # change bands options and select the default rgb
             self.bands.items = [*cp.planet_bands_combo]
+            self.bands.v_model = [*cp.planet_bands_combo][0]
             
-            # adapt dates to available data 
+            # adapt dates to available data and default to all available
             self.start.items = [y for y in range(cp.planet_min_start_year, cp.planet_max_end_year+1)]
+            self.start.v_model = cp.planet_min_start_year
             self.end.items = [y for y in range(cp.planet_min_start_year, cp.planet_max_end_year+1)]
+            self.end.v_model = cp.planet_max_end_year
             
         elif change['new'] == 'gee':
             # remove password 
             self.planet_key.hide()
             
-            # add source
+            # add source and default to landsat
             su.show_component(self.sources)
+            self.sources.v_model = [cp.sources[0]]
             
             # change band options
-            self.bands.items=[*cp.getAvailableBands()]
+            self.bands.items = [*cp.getAvailableBands()]
+            self.bands.v_model = [*cp.getAvailableBands()][0]
             
             # adapt dates to available data
             self.start.items = [y for y in range(cp.gee_min_start_year, cp.gee_max_end_year+1)]
+            self.start.v_model = 2005
             self.end.items = [y for y in range(cp.gee_min_start_year, cp.gee_max_end_year+1)]
+            self.end.v_model = 2018
             
         return
         
