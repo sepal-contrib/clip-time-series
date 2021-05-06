@@ -62,40 +62,40 @@ class ExportData(sw.Tile):
         square_size = self.viz_io.square_size
         semester = self.viz_io.semester
     
-        #try:
+        try:
         
-        if cs.is_pdf(file, bands, start, end):
-            self.output.add_live_msg('Pdf already exist', 'success')
-            widget.toggle_loading()
-            return
+            if cs.is_pdf(file, bands, start, end):
+                self.output.add_live_msg('Pdf already exist', 'success')
+                widget.toggle_loading()
+                return
         
-        # create the vrt from gee images 
-        if self.viz_io.driver == 'planet':
-            vrt_list, title_list = cs.get_planet_vrt(pts, start, end, square_size, file, bands, semester, self.output)
-        elif self.viz_io.driver == 'gee':
-            vrt_list, title_list = cs.get_gee_vrt(pts, start, end, square_size, file, bands, sources, self.output)
+            # create the vrt from gee images 
+            if self.viz_io.driver == 'planet':
+                vrt_list, title_list = cs.get_planet_vrt(pts, start, end, square_size, file, bands, semester, self.output)
+            elif self.viz_io.driver == 'gee':
+                vrt_list, title_list = cs.get_gee_vrt(pts, start, end, square_size, file, bands, sources, self.output)
             
-        # export as pdf 
-        pdf_file = cs.get_pdf(file, start, end, square_size, vrt_list, title_list, bands, pts, self.output)
+            # export as pdf 
+            pdf_file = cs.get_pdf(file, start, end, square_size, vrt_list, title_list, bands, pts, self.output)
     
-        # create a download btn
-        dwn = sw.DownloadBtn(cm.export.down_btn, path=str(pdf_file))
+            # create a download btn
+            dwn = sw.DownloadBtn(cm.export.down_btn, path=str(pdf_file))
     
-        # create a preview of the first page
-        pdf_file = str(pdf_file)
-        preview = pdf_file.replace('.pdf', '_preview.png')
+            # create a preview of the first page
+            pdf_file = str(pdf_file)
+            preview = pdf_file.replace('.pdf', '_preview.png')
             
-        with Image(filename=f'{pdf_file}[0]') as img:
-            img.background_color = Color("white")
-            img.alpha_channel = 'remove'
-            img.save(filename=preview)
+            with Image(filename=f'{pdf_file}[0]') as img:
+                img.background_color = Color("white")
+                img.alpha_channel = 'remove'
+                img.save(filename=preview)
                 
-        img_widget = w.Image(value=open(preview, "rb").read())
+            img_widget = w.Image(value=open(preview, "rb").read())
     
-        self.result_tile.set_content([dwn, img_widget])
+            self.result_tile.set_content([dwn, img_widget])
     
-        #except Exception as e: 
-        #    self.output.add_live_msg(str(e), 'error')
+        except Exception as e: 
+            self.output.add_live_msg(str(e), 'error')
     
         # toggle the loading button
         widget.toggle_loading()
