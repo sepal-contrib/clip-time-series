@@ -4,6 +4,7 @@ from sepal_ui import sepalwidgets as sw
 from sepal_ui import mapping as sm
 import pandas as pd
 import geopandas as gdp
+import ipyvuetify as v
 
 from component import scripts as cs
 from component.message import cm
@@ -13,14 +14,14 @@ class TestTile(sw.Tile):
     def __init__(self):
         
         # create the widgets 
-        txt = sw.Markdown(cm.table.test.txt)
+        txt = sw.Markdown(cm.table.test.txt) 
         
         # create the tile
         super().__init__(
             id_ = 'file_widget',
             title = cm.table.test.title,
-            btn = sw.Btn(cm.table.test.btn),
             output = sw.Alert(),
+            btn = sw.Btn(cm.table.test.btn, outlined=True, small=True),
             inputs = [txt]
         )
         

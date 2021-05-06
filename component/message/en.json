@@ -19,13 +19,9 @@
         "inputs": "Using the set of points provided in \"{}\", the process will export the \"{}\" data using the \"{}\" bands",
         "no_valid": "Please verify you're input before launching the export process",
         "txt": [
-            "The module will export your results to sepal in several steps:",
-            "",
-            "- download the images from Google Earth Engine (using the provided parameters)",
-            "- retrieve the images to Seapl (as `.tif` tiles)",
-            "- merge them into single year `.tif` raster",
-            "- produce the `.pdf` file",
-            "- free the allocated storage"
+            "The module will export the required images from the driver you selected. This images will be gathered by year to produce pdf files of clip time-series. This pdf files will be merged in one single file that will be the output of the process.",
+            "Keep in mind that the size of the images can be sensible (in particular for planet data). Use an appropiate instance to be able to build your file",
+            "By the end of the process, only the pdf final file will remain in your folders, avoiding to overload your SEPAL quota."
         ]
     },
     "viz": {
