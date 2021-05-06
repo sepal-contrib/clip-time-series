@@ -1,4 +1,6 @@
 from pathlib import Path
+from unidecode import unidecode
+import re
 
 import ee 
 from matplotlib.backends.backend_pdf import PdfPages
@@ -55,13 +57,15 @@ def get_pdf(file, start, end, square_size, vrt_list, title_list, bands, pts, out
     output.update_progress(0, msg='Pdf page created')
     for index, row in gdf_buffers.iterrows():
         
-        pdf_tmp = cp.tmp_dir.joinpath(f'{filename}_{name_bands}_tmp_pts_{row["id"]}.pdf')
+        name = re.sub('[^a-zA-Z\d\-\_]', '_', unidecode(row['id']))
+        
+        pdf_tmp = cp.tmp_dir.joinpath(f'{filename}_{name_bands}_tmp_pts_{name}.pdf')
         pdf_tmps.append(pdf_tmp)
     
         # create the resulting pdf
         with PdfPages(pdf_tmp) as pdf:        
             
-            page_title = f"Pt_{row['id']} (lat:{row['lat']:.5f}, lng:{row['lng']:.5f})"
+            page_title = f"Pt_{name} (lat:{row['lat']:.5f}, lng:{row['lng']:.5f})"
                   
             fig, axes = plt.subplots(nb_line, nb_col, figsize=(11.69,8.27), dpi=500)
             fig.suptitle(page_title, fontsize=16, fontweight ="bold")
