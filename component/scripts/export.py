@@ -57,7 +57,7 @@ def get_pdf(file, start, end, square_size, vrt_list, title_list, bands, pts, out
     output.update_progress(0, msg='Pdf page created')
     for index, row in gdf_buffers.iterrows():
         
-        name = re.sub('[^a-zA-Z\d\-\_]', '_', unidecode(row['id']))
+        name = re.sub('[^a-zA-Z\d\-\_]', '_', unidecode(str(row['id'])))
         
         pdf_tmp = cp.tmp_dir.joinpath(f'{filename}_{name_bands}_tmp_pts_{name}.pdf')
         pdf_tmps.append(pdf_tmp)
