@@ -68,6 +68,12 @@ def get_pdf(file, start, end, square_size, vrt_list, title_list, bands, pts, out
             page_title = f"Pt_{name} (lat:{row['lat']:.5f}, lng:{row['lng']:.5f})"
                   
             fig, axes = plt.subplots(nb_line, nb_col, figsize=(11.69,8.27), dpi=500)
+            
+            # I reshape by default to avoid a crash
+            # if nb_line = 1 the dimension of the table is reduced
+            axes = np.array(axes, dtype=object).reshape(nb_line, nb_col)
+                    
+                    
             fig.suptitle(page_title, fontsize=16, fontweight ="bold")
             fig.set_tight_layout(True) 
             
