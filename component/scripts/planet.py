@@ -90,7 +90,13 @@ def download_quads(filename, year, grid, bands, semester, out, iy, total_img):
         if not file.is_file():
         
             tmp_file = cp.tmp_dir.joinpath(f'{filename}_{year}_{quad_id}_tmp.tif')
-            quad = planet.client.get_quad_by_id(mosaic, quad_id).get()
+            
+            try:
+                quad = planet.client.get_quad_by_id(mosaic, quad_id).get()
+            except Exception as e:
+                out.add_msg(f'{e}', 'error')
+                continue
+            
             planet.client.download_quad(quad).get_body().write(tmp_file)
             
             with rio.open(tmp_file) as src:
