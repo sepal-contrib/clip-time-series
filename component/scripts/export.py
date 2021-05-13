@@ -7,6 +7,8 @@ from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
 import rasterio as rio
 from rasterio.windows import from_bounds
+from rasterio import warp
+from rasterio.crs import CRS
 import numpy as np
 from shapely import geometry as sg
 from PyPDF2 import PdfFileMerger, PdfFileReader
@@ -31,7 +33,7 @@ def is_pdf(file, bands, start, end):
     return pdf_file.is_file()
     
 
-def get_pdf(file, start, end, square_size, vrt_list, title_list, bands, pts, output):
+def get_pdf(file, start, end, image_size, square_size, vrt_list, title_list, bands, pts, output):
     
     # check dates
     range_year = [y for y in range(start, end + 1)]
@@ -46,8 +48,14 @@ def get_pdf(file, start, end, square_size, vrt_list, title_list, bands, pts, out
     pdf_file = cp.result_dir.joinpath(f'{filename}_{name_bands}_{start}_{end}.pdf')
     
     # create a geopandas of square buffer 
+    # they will only be used in 3857 no need to reproject to 4326
+    gdf_squares = pts.to_crs("EPSG:3857")
+    gdf_squares['geometry'] = gdf_squares.buffer(square_size/2, cap_style = 3)
+    #gdf_squares = gdf_squares.to_crs("EPSG:4326")
+    
+    # create a geopandas of thumbnails buffer 
     gdf_buffers = pts.to_crs("EPSG:3857")
-    gdf_buffers['geometry'] = gdf_buffers.buffer(square_size/2, cap_style = 3)
+    gdf_buffers['geometry'] = gdf_buffers.buffer(image_size/2, cap_style = 3)
     gdf_buffers = gdf_buffers.to_crs("EPSG:4326")   
     
     # get the disposition in col and line    
@@ -89,6 +97,13 @@ def get_pdf(file, start, end, square_size, vrt_list, title_list, bands, pts, out
             
                 with rio.open(file) as f:
                     data = f.read(window=from_bounds(minx, miny, maxx, maxy, f.transform))
+                    
+                    # reproject to 3857 
+                    # I want the final image to be as square not a rectangle 
+                    src_crs = CRS.from_epsg(4326)
+                    dst_crs = CRS.from_epsg(3857)
+                    data, _ = warp.reproject(data, src_transform=f.transform, src_crs=src_crs, dst_crs=dst_crs)
+                    minx, miny, maxx, maxy = warp.transform_bounds(src_crs, dst_crs, minx, miny, maxx, maxy)                    
                 
                 bands = [] 
                 for i in range(3):
@@ -110,10 +125,14 @@ def get_pdf(file, start, end, square_size, vrt_list, title_list, bands, pts, out
                 data = data/3000
                 data = data.clip(0, 1)
                 data = np.transpose(data,[1,2,0])
+                
+                # create the square polygon 
+                x_polygon, y_polygon = gdf_squares.loc[index]['geometry'].exterior.coords.xy
             
                 place = cp.getPositionPdf(placement_id, nb_col) 
                 ax = axes[place[0], place[1]]
-                ax.imshow(data, interpolation='nearest')
+                ax.imshow(data, interpolation='nearest', extent=[minx, maxx, miny, maxy])
+                ax.plot(x_polygon, y_polygon, color=cp.polygon_color, linewidth=cp.polygon_width)
                 ax.set_title(str(year) + ' ' + title_list[year], x=.0, y=1.0, fontsize='small', backgroundcolor='white', ha='left')
                 ax.axis('off')
                 ax.set_aspect('equal', 'box')

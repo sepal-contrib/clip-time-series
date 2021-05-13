@@ -60,6 +60,7 @@ class ExportData(sw.Tile):
         start = self.viz_io.start_year
         end = self.viz_io.end_year
         square_size = self.viz_io.square_size
+        image_size = self.viz_io.image_size
         semester = self.viz_io.semester
     
         try:
@@ -71,12 +72,12 @@ class ExportData(sw.Tile):
 
             # create the vrt from gee images 
             if self.viz_io.driver == 'planet':
-                vrt_list, title_list = cs.get_planet_vrt(pts, start, end, square_size, file, bands, semester, self.output)
+                vrt_list, title_list = cs.get_planet_vrt(pts, start, end, image_size, file, bands, semester, self.output)
             elif self.viz_io.driver == 'gee':
-                vrt_list, title_list = cs.get_gee_vrt(pts, start, end, square_size, file, bands, sources, self.output)
+                vrt_list, title_list = cs.get_gee_vrt(pts, start, end, image_size, file, bands, sources, self.output)
 
             # export as pdf 
-            pdf_file = cs.get_pdf(file, start, end, square_size, vrt_list, title_list, bands, pts, self.output)
+            pdf_file = cs.get_pdf(file, start, end, image_size, square_size, vrt_list, title_list, bands, pts, self.output)
 
             # create a download btn
             dwn = sw.DownloadBtn(cm.export.down_btn, path=str(pdf_file))

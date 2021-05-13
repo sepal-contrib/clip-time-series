@@ -58,7 +58,8 @@ def get_gee_vrt(pts, start, end, square_size, file, bands, sources, output):
     # load the data directly in SEPAL
     satellites = {} # contain the names of the used satellites
     
-    total_images = (end - start + 1)*(len(ee_buffers)-1)
+    nb_points = max(1, len(ee_buffers)-1)
+    total_images = (end - start + 1) * nb_points
     for i, year in enumerate(range_year):
         
         image, satellites[year] = getImage(sources, bands, ee_multiPolygon, year)
@@ -93,7 +94,7 @@ def get_gee_vrt(pts, start, end, square_size, file, bands, sources, output):
                 # remove the zip 
                 tmp.unlink()
             
-            output.update_progress((i*(len(ee_buffers)-1) + j)/total_images, msg='Image loaded')
+            output.update_progress((i * nb_points + j)/total_images, msg='Image loaded')
     
     # create a single vrt per year 
     vrt_list = {}

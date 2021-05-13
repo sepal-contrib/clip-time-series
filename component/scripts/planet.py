@@ -85,14 +85,17 @@ def download_quads(filename, year, grid, bands, semester, out, iy, total_img):
         
         # check file existence 
         file = cp.tmp_dir.joinpath(f'{filename}_{year}_{quad_id}.tif')
-        file_list.append(str(file))
         
-        if not file.is_file():
+        if file.is_file():
+            file_list.append(str(file))
+            
+        else:
         
             tmp_file = cp.tmp_dir.joinpath(f'{filename}_{year}_{quad_id}_tmp.tif')
             
             try:
                 quad = planet.client.get_quad_by_id(mosaic, quad_id).get()
+                file_list.append(str(file))
             except Exception as e:
                 out.add_msg(f'{e}', 'error')
                 continue
@@ -130,7 +133,8 @@ def download_quads(filename, year, grid, bands, semester, out, iy, total_img):
             tmp_file.unlink()
         
         # update the loading bar 
-        progress = (iy*(len(quads)-1) + i)/total_img
+        nb_points = max(1, len(quads)-1)
+        progress = (iy * nb_points + i)/total_img
         out.update_progress(progress, msg='Image loaded')
     
     return file_list
@@ -153,11 +157,17 @@ def get_planet_vrt(pts, start, end, square_size, file, bands, semester, out):
     
     # create a vrt for each year 
     vrt_list = {}
-    total_img = (end - start + 1)*(len(planet_grid)-1)
+    nb_points = max(1, len(planet_grid)-1)
+    total_img = (end - start + 1)*nb_points
+    print(total_img)
     for i, year in enumerate(range_year):
         
         # download the requested images 
         file_list = download_quads(filename, year, planet_grid, bands, semester, out, i, total_img)
+        print(file_list)
+        
+        if file_list == []:
+            raise Exception("No image have been found on planet servers")
         
         # create a vrt out of it 
         vrt_path = cp.tmp_dir.joinpath(f'{filename}_{year}.vrt')
