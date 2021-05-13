@@ -126,6 +126,7 @@ class InputTile(sw.Tile):
         start = self.viz_io.start_year
         end = self.viz_io.end_year
         square_size = self.viz_io.square_size
+        image_size = self.viz_io.image_size
         planet_key = self.viz_io.planet_key
         semester = self.viz_io.semester
         
@@ -153,7 +154,7 @@ class InputTile(sw.Tile):
                 cs.validate_key(planet_key, self.output)
             
             # generate a sum-up of the inputs
-            msg = cs.set_msg(pts, bands, sources, Path(file).stem, start, end, image_size, driver)
+            msg = cs.set_msg(pts, bands, sources, Path(file).stem, start, end, image_size, square_size, driver)
             self.output.add_msg(msg, 'warning')
         
             # change the checked value 

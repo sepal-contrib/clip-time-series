@@ -2,7 +2,7 @@ import traitlets
 
 import ipyvuetify as v
 
-def set_msg(pts, bands_combo, sources, basename, start, end, square_size, driver):
+def set_msg(pts, bands_combo, sources, basename, start, end, image_size, square_size, driver):
     
     # transform sources in a str 
     source_name = ' & '.join(sources) if type(sources) == list else None
@@ -32,7 +32,10 @@ def set_msg(pts, bands_combo, sources, basename, start, end, square_size, driver
                     Using images from <b>{start}</b> to <b>{end}</b>
                 </li>
                 <li>
-                    Using squares of <b>{square_size}x{square_size}</b> m\u00B2  
+                    Using thumbnails of <b>{image_size}x{image_size}</b> m\u00B2
+                </li>
+                <li>
+                    Displaying squares of <b>{square_size}x{square_size}</b> m\u00B2  
                 </li>
                 <li>
                     Saved in a file using <b>{basename}</b> as a basename
