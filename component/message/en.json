@@ -41,6 +41,8 @@
         "start_year": "Specify the start year",
         "end_year": "Specify the end year",
         "square_size": "Square size",
+        "image_size": "Size of the Thumbnails",
+        "no_image": "No size is provided for the thumbnails", 
         "no_start": "Please provide a start year",
         "no_end": "Please provide a end year",
         "no_square": "Please provide a square size",

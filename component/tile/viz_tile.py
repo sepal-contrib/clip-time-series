@@ -64,8 +64,19 @@ class InputTile(sw.Tile):
             row=True,  
             children=[self.start, self.end]
         )
-        square_size = v.Slider(
+        
+        image_size = v.Slider(
             step=500, 
+            min=cp.min_image, 
+            max=cp.max_image, 
+            label=cm.viz.image_size, 
+            v_model=self.viz_io.image_size, 
+            thumb_label='always', 
+            class_='mt-5'
+        )
+        
+        square_size = v.Slider(
+            step=10, 
             min=cp.min_square, 
             max=cp.max_square, 
             label=cm.viz.square_size, 
@@ -73,6 +84,8 @@ class InputTile(sw.Tile):
             thumb_label='always', 
             class_='mt-5'
         )
+        
+        
         
         # bind the inputs
         output = sw.Alert() \
@@ -82,6 +95,7 @@ class InputTile(sw.Tile):
             .bind(self.start, viz_io, 'start_year') \
             .bind(self.end, viz_io, 'end_year') \
             .bind(self.driver, viz_io, 'driver') \
+            .bind(image_size, viz_io, 'image_size') \
             .bind(square_size, viz_io, 'square_size') \
             .bind(self.semester, viz_io, 'semester')
         
@@ -90,7 +104,7 @@ class InputTile(sw.Tile):
             id_ = "viz_widget",
             title = cm.viz.title,
             btn = sw.Btn(cm.viz.btn),
-            inputs = [self.driver, self.sources, self.planet_key, self.bands, years, self.semester, square_size],
+            inputs = [self.driver, self.sources, self.planet_key, self.bands, years, self.semester, image_size, square_size],
             output = output
         )
         
@@ -122,6 +136,7 @@ class InputTile(sw.Tile):
         if not self.output.check_input(start, cm.viz.no_start): return widget.toggle_loading()
         if not self.output.check_input(end, cm.viz.no_end): return widget.toggle_loading()
         if not self.output.check_input(square_size, cm.viz.no_square): return widget.toggle_loading()
+        if not self.output.check_input(image_size, cm.viz.no_image): return widget.toggle_loading()
         if start > end:
             self.output.add_msg(cm.viz.wrong_date, 'error')
             return widget.toggle_loading()
@@ -138,7 +153,7 @@ class InputTile(sw.Tile):
                 cs.validate_key(planet_key, self.output)
             
             # generate a sum-up of the inputs
-            msg = cs.set_msg(pts, bands, sources, Path(file).stem, start, end, square_size, driver)
+            msg = cs.set_msg(pts, bands, sources, Path(file).stem, start, end, image_size, driver)
             self.output.add_msg(msg, 'warning')
         
             # change the checked value 

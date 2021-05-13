@@ -12,7 +12,8 @@ class VizIo:
         self.bands = [*cp.getAvailableBands()][0]
         self.start_year = 2008
         self.end_year = 2018
-        self.square_size = 2000 # in meters
+        self.image_size = 2000 # in meters
+        self.square_size = 30 # in meters
         
         # gee related input
         self.sources = [cp.sources[0]]
