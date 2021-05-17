@@ -14,7 +14,7 @@ def getImage(sources, bands, mask, year):
     start = str(year) + '-01-01'
     end = str(year) + '-12-31'
     
-    #priority selector for satellites
+    # priority selector for satellites
     satellites = cp.getSatellites(sources, year)
     for satelliteId in satellites:
         dataset = ee.ImageCollection(satellites[satelliteId]) \
@@ -22,12 +22,34 @@ def getImage(sources, bands, mask, year):
             .filterBounds(mask) \
             .map(cp.getCloudMask(satelliteId))
         
-        if dataset.size().getInfo() > 0:
-            satellite = satelliteId
-            break
+        clip = dataset.median().clip(mask).select(cp.getAvailableBands()[bands][satelliteId])
+        
+        if dataset.size().getInfo():
+            # retreive the name of the first band
+            band = cp.getAvailableBands()[bands][satelliteId][0]
+            scale = cp.getScale(satelliteId)
+
+            # get the number of masked pixel 
+            pixel_masked = clip.select(band).reduceRegion(
+                reducer=ee.Reducer.count(),
+                geometry=mask,
+                scale=scale,
+            ).get(band)
+
+            # get the number of pixel in the image 
+            pixel = clip.select(band).unmask().reduceRegion(
+                reducer=ee.Reducer.count(),
+                geometry=mask,
+                scale=scale
+            ).get(band)
+
+            # proportion of masked pixels
+            visible = ee.Number(pixel_masked).divide(ee.Number(pixel)).multiply(100).getInfo()
+
+            #nb_images = dataset.size().getInfo()
+            if satelliteId == 'landsat_7' or visible > 50:
+                break
             
-    clip = dataset.median().clip(mask).select(cp.getAvailableBands()[bands][satelliteId])
-    
     return (clip, satelliteId)
 
 def get_gee_vrt(pts, start, end, square_size, file, bands, sources, output):
@@ -35,7 +57,7 @@ def get_gee_vrt(pts, start, end, square_size, file, bands, sources, output):
     # get the filename
     filename = Path(file).stem
     
-    # create a range_year element to simplyfy next for loops
+    # create a range_year element to simplify next for loops
     range_year = [y for y in range(start, end + 1)]
     
     # transform the stored points into ee points 
@@ -62,9 +84,14 @@ def get_gee_vrt(pts, start, end, square_size, file, bands, sources, output):
     total_images = (end - start + 1) * nb_points
     for i, year in enumerate(range_year):
         
-        image, satellites[year] = getImage(sources, bands, ee_multiPolygon, year)
+        #image, satellites[year] = getImage(sources, bands, ee_multiPolygon, year)
+        
+        satellites[year] = [None] * len(ee_buffers)
         
         for j, buffer in enumerate(ee_buffers):
+            
+            # get the image 
+            image, satellites[year][j] = getImage(sources, bands, buffer, year)
             
             description = f"{descriptions[year]}_{j}"
             
@@ -78,7 +105,7 @@ def get_gee_vrt(pts, start, end, square_size, file, bands, sources, output):
                     'name': name,
                     'region': buffer,
                     'filePerBand': False,
-                    'scale': cp.getScale(satellites[year])
+                    'scale': cp.getScale(satellites[year][j])
                 })
                 
                 tmp = cp.tmp_dir.joinpath(f'{name}.zip')
@@ -88,8 +115,9 @@ def get_gee_vrt(pts, start, end, square_size, file, bands, sources, output):
                 with zipfile.ZipFile(tmp,"r") as zip_:
                     data = zip_.read(zip_.namelist()[0])
                     
-                    with dst.open('wb') as f:
-                        f.write(data)
+                    dst.write_bytes(data)
+                    #with dst.open('wb') as f:
+                    #    f.write(data)
                 
                 # remove the zip 
                 tmp.unlink()
@@ -114,7 +142,7 @@ def get_gee_vrt(pts, start, end, square_size, file, bands, sources, output):
         
         vrt_list[year] = vrt_path
     
-    title_list = {y: cp.getShortname(satellites[y]) for y in range_year}
+    title_list = {y: {j: cp.getShortname(satellites[y][j]) for j in range(len(ee_buffers))} for y in range_year}
     
     # return the file 
     return vrt_list, title_list

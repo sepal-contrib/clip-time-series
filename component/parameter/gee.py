@@ -17,7 +17,7 @@ def getSatellites(sources, year):
     if 'landsat' in sources:
         if year >= 2013: satellites['landsat_8'] = 'LANDSAT/LC08/C01/T1_SR'
         if year <= 2013: satellites['landsat_5'] = 'LANDSAT/LT05/C01/T1_SR'
-        satellites['landsat_7'] = 'LANDSAT/LE07/C01/T1_SR'
+        if year >= 1999: satellites['landsat_7'] = 'LANDSAT/LE07/C01/T1_SR'
         
     return satellites
 
@@ -111,7 +111,8 @@ def getCloudMask(satelliteId):
             qa = image.select('pixel_qa')
             # If the cloud bit (5) is set and the cloud confidence (7) is high
             # or the cloud shadow bit is set (3), then it's a bad pixel.
-            cloud = qa.bitwiseAnd(1 << 5).And(qa.bitwiseAnd(1 << 7)).Or(qa.bitwiseAnd(1 << 3))
+            cloud = qa.bitwiseAnd(1 << 5).Or(qa.bitwiseAnd(1 << 3))
+            #.And(qa.bitwiseAnd(1 << 7)) \
             # Remove edge pixels that don't occur in all bands
             mask2 = image.mask().reduce(ee.Reducer.min())
             

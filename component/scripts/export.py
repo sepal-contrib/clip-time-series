@@ -133,7 +133,7 @@ def get_pdf(file, start, end, image_size, square_size, vrt_list, title_list, ban
                 ax = axes[place[0], place[1]]
                 ax.imshow(data, interpolation='nearest', extent=[minx, maxx, miny, maxy])
                 ax.plot(x_polygon, y_polygon, color=cp.polygon_color, linewidth=cp.polygon_width)
-                ax.set_title(str(year) + ' ' + title_list[year], x=.0, y=1.0, fontsize='small', backgroundcolor='white', ha='left')
+                ax.set_title(str(year) + ' ' + title_list[year][index], x=.0, y=1.0, fontsize='small', backgroundcolor='white', ha='left')
                 ax.axis('off')
                 ax.set_aspect('equal', 'box')
                 
@@ -165,8 +165,8 @@ def get_pdf(file, start, end, image_size, square_size, vrt_list, title_list, ban
     mergedObject.write(str(pdf_file))
     
     # flush the tmp repository 
-    for file in cp.tmp_dir.glob('*.*'):
-        file.unlink()
+    #for file in cp.tmp_dir.glob('*.*'):
+    #    file.unlink()
     #cp.tmp_dir.rmdir() # if I remove the folder I will not be able to relaunch the app without relaunching everything
     
     output.add_live_msg('PDF output finished', 'success')
