@@ -3,6 +3,9 @@ from pathlib import Path
 import requests
 from types import SimpleNamespace
 from itertools import product
+import threading
+from concurrent import futures
+from functools import partial
 
 from planet import api
 from ipyleaflet import TileLayer
@@ -66,79 +69,6 @@ def validate_key(key, out):
     
     return
 
-def download_quads(filename, year, grid, bands, semester, out, iy, total_img):
-    """export each quad to the appropriate folder"""
-    
-    # get the mosaic from the mosaic name
-    mosaic_name = planet.mosaic_name.format(cp.planet_date_ranges[year][semester])
-    mosaics = planet.client.get_mosaics().get()['mosaics'] 
-    mosaic_names = [m['name'] for m in mosaics]
-    mosaic = mosaics[mosaic_names.index(mosaic_name)]
-    
-    # construct the quad list 
-    quads = []
-    for i, row in grid.iterrows():
-        quads.append(f'{int(row.x):04d}-{int(row.y):04d}')
-        
-    file_list = []
-    for i, quad_id in enumerate(quads):
-        
-        # check file existence 
-        file = cp.tmp_dir.joinpath(f'{filename}_{year}_{quad_id}.tif')
-        
-        if file.is_file():
-            file_list.append(str(file))
-            
-        else:
-        
-            tmp_file = cp.tmp_dir.joinpath(f'{filename}_{year}_{quad_id}_tmp.tif')
-            
-            try:
-                quad = planet.client.get_quad_by_id(mosaic, quad_id).get()
-                file_list.append(str(file))
-            except Exception as e:
-                out.add_msg(f'{e}', 'error')
-                continue
-            
-            planet.client.download_quad(quad).get_body().write(tmp_file)
-            
-            with rio.open(tmp_file) as src:
-                
-                # adapt the file to only keep the 3 required bands
-                data = src.read(cp.planet_bands_combo[bands])
-                
-                # reproject the image in EPSG:4326
-                dst_crs = 'EPSG:4326'
-                transform, width, height = calculate_default_transform(
-                    src.crs, 
-                    dst_crs, 
-                    src.width, 
-                    src.height, 
-                    *src.bounds
-                )
-                
-                kwargs = src.meta.copy()
-                kwargs.update({
-                    'count': 3,
-                    'crs': dst_crs,
-                    'transform': transform,
-                    'width': width,
-                    'height': height
-                })
-                
-                with rio.open(file, 'w', **kwargs) as dst:
-                    dst.write(data)
-                    
-            # remove the tmp file
-            tmp_file.unlink()
-        
-        # update the loading bar 
-        nb_points = max(1, len(quads)-1)
-        progress = (iy * nb_points + i)/total_img
-        out.update_progress(progress, msg='Image loaded')
-    
-    return file_list
-
 def get_planet_vrt(pts, start, end, square_size, file, bands, semester, out):
     
     # get the filename
@@ -158,14 +88,35 @@ def get_planet_vrt(pts, start, end, square_size, file, bands, semester, out):
     # create a vrt for each year 
     vrt_list = {}
     nb_points = max(1, len(planet_grid)-1)
-    total_img = (end - start + 1)*nb_points
+    total_img = (end - start + 1) * nb_points
+    out.reset_progress(total_img, 'Image loaded')
     for i, year in enumerate(range_year):
         
+        # get the mosaic from the mosaic name
+        mosaic_name = planet.mosaic_name.format(cp.planet_date_ranges[year][semester])
+        mosaics = planet.client.get_mosaics().get()['mosaics'] 
+        mosaic_names = [m['name'] for m in mosaics]
+        mosaic = mosaics[mosaic_names.index(mosaic_name)]
+    
+        # construct the quad list 
+        quads = [f'{int(row.x):04d}-{int(row.y):04d}' for i, row in planet_grid.iterrows()]
+        
+        download_params = {
+            'filename': filename,
+            'year': year,
+            'mosaic': mosaic,
+            'bands': bands, 
+            'file_list': [],
+            'out': out,
+            'lock': threading.Lock()
+        }
         # download the requested images 
-        file_list = download_quads(filename, year, planet_grid, bands, semester, out, i, total_img)
+        with futures.ThreadPoolExecutor() as executor: # use all the available CPU/GPU
+            executor.map(partial(get_quad, **download_params), quads)  
+        file_list = download_params['file_list']
         
         if file_list == []:
-            raise Exception("No image have been found on planet servers")
+            raise Exception("No image have been found on Planet lab servers")
         
         # create a vrt out of it 
         vrt_path = cp.tmp_dir.joinpath(f'{filename}_{year}.vrt')
@@ -255,7 +206,66 @@ def get_planet_grid(squares, out):
     grid_gdf = grid.to_crs('EPSG:4326')
     
     return grid_gdf
+
+def get_quad(quad_id, filename, year, mosaic, bands, file_list, out, lock = None):
+    """get one single quad from parameters"""
+        
+    # check file existence 
+    file = cp.tmp_dir.joinpath(f'{filename}_{year}_{quad_id}.tif')
+        
+    if file.is_file():
+        if lock:
+            with lock:
+                file_list.append(str(file))
+            
+    else:
+        
+        tmp_file = cp.tmp_dir.joinpath(f'{filename}_{year}_{quad_id}_tmp.tif')
+        
+        # to avoid the downloading of non existing quads
+        try:
+            quad = planet.client.get_quad_by_id(mosaic, quad_id).get()
+            file_list.append(str(file))
+        except Exception as e:
+            out.add_msg(f'{e}', 'error')
+            return 
+            
+        planet.client.download_quad(quad).get_body().write(tmp_file)
+            
+        with rio.open(tmp_file) as src:
+                
+            # adapt the file to only keep the 3 required bands
+            data = src.read(cp.planet_bands_combo[bands])
+                
+            # reproject the image in EPSG:4326
+            dst_crs = 'EPSG:4326'
+            transform, width, height = calculate_default_transform(
+                src.crs, 
+                dst_crs, 
+                src.width, 
+                src.height, 
+                *src.bounds
+            )
+                
+            kwargs = src.meta.copy()
+            kwargs.update({
+                'count': 3,
+                'crs': dst_crs,
+                'transform': transform,
+                'width': width,
+                'height': height
+            })
+            
+            with rio.open(file, 'w', **kwargs) as dst:
+                dst.write(data)
+                    
+        # remove the tmp file
+        tmp_file.unlink()
+        
+    # update the loading bar 
+    out.update_progress()
     
+    return 
     
     
     

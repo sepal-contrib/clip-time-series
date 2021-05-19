@@ -98,9 +98,8 @@ def get_gee_vrt(pts, start, end, square_size, file, bands, sources, output):
             'satellites': satellites,
             'lock': threading.Lock()
         }
-            
-        # the code cannot be parralelized because GEE answer only 1 request at the time
-        # living the code here to avoid forgeting
+        
+        # download the images in parralel fashion
         with futures.ThreadPoolExecutor() as executor: # use all the available CPU/GPU
             executor.map(partial(down_buffer, **download_params), ee_buffers)   
             
@@ -131,8 +130,6 @@ def get_gee_vrt(pts, start, end, square_size, file, bands, sources, output):
 
 def down_buffer(buffer, sources, bands, ee_buffers, year, descriptions, output, satellites, lock=None):
     """download the image for a specific buffer"""
-    
-    #print("toto")
     
     # get back the image index 
     j = ee_buffers.index(buffer)
