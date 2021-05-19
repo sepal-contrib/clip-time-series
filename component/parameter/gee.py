@@ -1,4 +1,6 @@
 import datetime
+from collections import OrderedDict
+
 import ee 
 
 ee.Initialize()
@@ -11,7 +13,7 @@ sources = ['landsat', 'sentinel']
 # functions to access parameters according to the used satellite
 def getSatellites(sources, year):
     
-    satellites = {}
+    satellites = OrderedDict()
     
     if 'sentinel' in sources and year >= 2015: satellites['sentinel_2'] = 'COPERNICUS/S2_SR'
     if 'landsat' in sources:
@@ -30,7 +32,11 @@ def getShortname(satellite):
         'landsat_8': 'L8'
     }
     
-    return short[satellite]
+    # in parralel sometime the code doesn't manage to write the appropriate key. 
+    # instead of crashing I'll just write nothing
+    out = short[satellite] if satellite else ''
+    
+    return out
 
 def getScale(satellite):
     

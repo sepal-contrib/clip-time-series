@@ -159,12 +159,10 @@ def get_planet_vrt(pts, start, end, square_size, file, bands, semester, out):
     vrt_list = {}
     nb_points = max(1, len(planet_grid)-1)
     total_img = (end - start + 1)*nb_points
-    print(total_img)
     for i, year in enumerate(range_year):
         
         # download the requested images 
         file_list = download_quads(filename, year, planet_grid, bands, semester, out, i, total_img)
-        print(file_list)
         
         if file_list == []:
             raise Exception("No image have been found on planet servers")
@@ -181,7 +179,7 @@ def get_planet_vrt(pts, start, end, square_size, file, bands, semester, out):
         vrt_list[year] = vrt_path
         
     # create a title list to be consistent
-    title_list = {y: f'{planet.data} {cp.planet_semesters[semester]}' for y in range_year}
+    title_list = {y: {i: f'{planet.data} {cp.planet_semesters[semester]}' for i in range(len(gdf_buffers))} for y in range_year}
     
     return vrt_list, title_list
         

@@ -62,13 +62,16 @@ def get_pdf(file, start, end, image_size, square_size, vrt_list, title_list, ban
     nb_col, nb_line = cp.get_dims(end - start)
     
     pdf_tmps = []
-    output.update_progress(0, msg='Pdf page created')
+    output.reset_progress(len(gdf_buffers), 'Pdf page created')
     for index, row in gdf_buffers.iterrows():
         
         name = re.sub('[^a-zA-Z\d\-\_]', '_', unidecode(str(row['id'])))
         
         pdf_tmp = cp.tmp_dir.joinpath(f'{filename}_{name_bands}_tmp_pts_{name}.pdf')
         pdf_tmps.append(pdf_tmp)
+        
+        if pdf_tmp.is_file():
+            continue
     
         # create the resulting pdf
         with PdfPages(pdf_tmp) as pdf:        
@@ -87,6 +90,7 @@ def get_pdf(file, start, end, image_size, square_size, vrt_list, title_list, ban
             
             # display the images in a fig and export it as a pdf page
             placement_id = 0
+            
             for year in range_year:
                 
                 # load the file 
@@ -153,8 +157,7 @@ def get_pdf(file, start, end, image_size, square_size, vrt_list, title_list, ban
             pdf.savefig(fig)
             plt.close('all')
            
-        progress = index/(len(pts) - 1) if len(pts) > 1 else 1
-        output.update_progress(progress, msg='Pdf page created')
+        output.update_progress()
         
     # merge all the pdf files 
     output.add_live_msg('merge all pdf files')
@@ -165,8 +168,8 @@ def get_pdf(file, start, end, image_size, square_size, vrt_list, title_list, ban
     mergedObject.write(str(pdf_file))
     
     # flush the tmp repository 
-    #for file in cp.tmp_dir.glob('*.*'):
-    #    file.unlink()
+    for file in cp.tmp_dir.glob('*.*'):
+        file.unlink()
     #cp.tmp_dir.rmdir() # if I remove the folder I will not be able to relaunch the app without relaunching everything
     
     output.add_live_msg('PDF output finished', 'success')
