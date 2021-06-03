@@ -1,9 +1,13 @@
 import json 
 
-from sepal_ui import sepalwidgets as sw
+
 from wand.image import Image 
 from wand.color import Color
+
 import ipywidgets as w
+
+from sepal_ui import sepalwidgets as sw
+from sepal_ui.scripts import utils as su
 
 from component.message import cm
 from component import scripts as cs
@@ -21,12 +25,12 @@ class ExportResult(sw.Tile):
         
 class ExportData(sw.Tile):
     
-    def __init__(self, ex_io, viz_io, tb_io, result_tile):
+    def __init__(self, ex_model, viz_model, tb_model, result_tile):
         
-        # gather io 
-        self.ex_io = ex_io,
-        self.viz_io = viz_io
-        self.tb_io = tb_io
+        # gather model
+        self.ex_model = ex_model,
+        self.viz_model = viz_model
+        self.tb_model = tb_model
         
         # gather the result tile
         self.result_tile = result_tile
@@ -38,47 +42,53 @@ class ExportData(sw.Tile):
             id_ = 'export_widget',
             title = cm.export.title, 
             btn = sw.Btn(cm.export.btn),
-            output = cw.CustomAlert(),
+            alert = cw.CustomAlert(),
             inputs = [txt]
         )
         
         # js behaviour 
         self.btn.on_event('click', self._export_data)
-        
+    
+    @su.loading_button(debug=True)
     def _export_data(self, widget, event, data):
-    
-        # toggle the loading button
-        widget.toggle_loading()
-    
+
         # check only validation     
-        if not self.output.check_input(self.viz_io.check, cm.export.no_input): return widget.toggle_loading()
+        if not self.alert.check_input(self.viz_model.check, cm.export.no_input): return
         
         # rename variable for the sake of simplified writting 
-        file = json.loads(self.tb_io.json_table)['pathname']
-        pts = self.tb_io.pts
-        bands = self.viz_io.bands
-        sources = self.viz_io.sources
-        start = self.viz_io.start_year
-        end = self.viz_io.end_year
-        square_size = self.viz_io.square_size
-        image_size = self.viz_io.image_size
-        semester = self.viz_io.semester
+        file = json.loads(self.tb_model.json_table)['pathname']
+        pts = self.tb_model.pts
+        bands = self.viz_model.bands
+        sources = self.viz_model.sources
+        start = self.viz_model.start_year
+        end = self.viz_model.end_year
+        square_size = self.viz_model.square_size
+        image_size = self.viz_model.image_size
+        semester = self.viz_model.semester
     
-        #try:
         
         if cs.is_pdf(file, bands, start, end):
-            self.output.add_live_msg('Pdf already exist', 'success')
-            widget.toggle_loading()
+            self.alert.add_live_msg('Pdf already exist', 'success')
             return
 
         # create the vrt from gee images 
-        if self.viz_io.driver == 'planet':
-            vrt_list, title_list = cs.get_planet_vrt(pts, start, end, image_size, file, bands, semester, self.output)
-        elif self.viz_io.driver == 'gee':
-            vrt_list, title_list = cs.get_gee_vrt(pts, start, end, image_size, file, bands, sources, self.output)
+        if self.viz_model.driver == 'planet':
+            vrt_list, title_list = cs.get_planet_vrt(
+                pts, start, end, image_size, 
+                file, bands, semester, self.alert
+            )
+        elif self.viz_model.driver == 'gee':
+            vrt_list, title_list = cs.get_gee_vrt(
+                pts, start, end, image_size, 
+                file, bands, sources, self.alert
+            )
 
         # export as pdf 
-        pdf_file = cs.get_pdf(file, start, end, image_size, square_size, vrt_list, title_list, bands, pts, self.output)
+        pdf_file = cs.get_pdf(
+            file, start, end, image_size, 
+            square_size, vrt_list, title_list, bands, pts, 
+            self.alert
+        )
 
         # create a download btn
         dwn = sw.DownloadBtn(cm.export.down_btn, path=str(pdf_file))
@@ -95,11 +105,5 @@ class ExportData(sw.Tile):
         img_widget = w.Image(value=open(preview, "rb").read())
 
         self.result_tile.set_content([dwn, img_widget])
-    
-        #except Exception as e: 
-        #    self.output.add_live_msg(str(e), 'error')
-    
-        # toggle the loading button
-        widget.toggle_loading()
-    
+        
         return 
