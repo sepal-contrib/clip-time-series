@@ -140,7 +140,7 @@ class InputTile(sw.Tile):
     
         # load the input 
         driver = self.viz_model.driver
-        file = json.loads(self.tb_model.json_table)['pathname']
+        file = self.tb_model.json_table['pathname']
         pts = self.tb_model.pts
         bands = self.viz_model.bands
         sources = self.viz_model.sources

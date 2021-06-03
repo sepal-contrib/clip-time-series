@@ -56,7 +56,7 @@ class ExportData(sw.Tile):
         if not self.alert.check_input(self.viz_model.check, cm.export.no_input): return
         
         # rename variable for the sake of simplified writting 
-        file = json.loads(self.tb_model.json_table)['pathname']
+        file = self.tb_model.json_table['pathname']
         pts = self.tb_model.pts
         bands = self.viz_model.bands
         sources = self.viz_model.sources
