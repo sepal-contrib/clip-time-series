@@ -3,9 +3,10 @@ from traitlets import Any
 from sepal_ui import model
 from component import parameter as cp
 
+
 class VizModel(model.Model):
-    
-    # viz io is initialized with gee default data 
+
+    # viz io is initialized with gee default data
     # (full landsat in rgb from 2008 to 2018)
 
     # inputs
@@ -20,6 +21,6 @@ class VizModel(model.Model):
     # gee related input
     sources = Any([cp.sources[0]]).tag(sync=True)
 
-    # planet inputs 
+    # planet inputs
     planet_key = Any(None).tag(sync=True)
     semester = Any(None).tag(sync=True)

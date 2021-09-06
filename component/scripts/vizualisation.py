@@ -2,18 +2,21 @@ import traitlets
 
 import ipyvuetify as v
 
-def set_msg(pts, bands_combo, sources, basename, start, end, image_size, square_size, driver):
-    
-    # transform sources in a str 
-    source_name = ' & '.join(sources) if type(sources) == list else None
-        
+
+def set_msg(
+    pts, bands_combo, sources, basename, start, end, image_size, square_size, driver
+):
+
+    # transform sources in a str
+    source_name = " & ".join(sources) if type(sources) == list else None
+
     nb_pts = len(pts)
-    
-    #compute the surface 
-    pts_conform = pts.to_crs('ESRI:54009')
+
+    # compute the surface
+    pts_conform = pts.to_crs("ESRI:54009")
     minx, miny, maxx, maxy = pts_conform.total_bounds
-    surface = (maxx-minx)*(maxy-miny)/10e6 #in km2
-    
+    surface = (maxx - minx) * (maxy - miny) / 10e6  # in km2
+
     msg = f"""
         <div>
             <p>
@@ -47,15 +50,9 @@ def set_msg(pts, bands_combo, sources, basename, start, end, image_size, square_
             </p>
         </div>
     """
-    
-    #create a Html widget
+
+    # create a Html widget
     class MyHTML(v.VuetifyTemplate):
         template = traitlets.Unicode(msg).tag(sync=True)
-    
-    
+
     return MyHTML()
-    
-    
-    
-    
-    
