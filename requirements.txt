@@ -23,7 +23,7 @@ ipyleaflet==0.13.3
 Shapely==1.7.1
 ipyvuetify==1.6.2
 rasterio==1.1.5
-requests==2.18.4
+requests==2.20.0
 matplotlib==3.3.4
 pandas==1.1.5
 geopandas==0.9.0
