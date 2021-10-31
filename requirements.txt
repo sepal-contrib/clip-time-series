@@ -1,0 +1,30 @@
+# these libs are requested to build common python libs
+# if you are an advance user and are sure to not use them you can comment the following lines
+wheel
+Cython
+pybind11
+
+# if you require GDAL and or pyproj in your module please uncomment these lines
+# there are set up to be inlined with SEPAL implementation of GDAL and PROJ version
+GDAL==3.0.4
+pyproj<3.0.0
+
+# the base lib to run any sepal_ui based app
+# don't forget to fix it to a specific version when you're app is ready
+sepal_ui==2.0.6
+
+# custom libs
+Wand==0.6.6
+traitlets==4.3.3
+numpy==1.19.5
+Unidecode==1.2.0
+ipywidgets==7.6.3
+ipyleaflet==0.13.3
+Shapely==1.7.1
+ipyvuetify==1.6.2
+rasterio==1.1.5
+requests==2.18.4
+matplotlib==3.3.4
+pandas==1.1.5
+geopandas==0.9.0
+PyPDF2==1.26.0
