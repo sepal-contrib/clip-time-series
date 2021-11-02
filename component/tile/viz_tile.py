@@ -35,43 +35,26 @@ class InputTile(sw.Tile):
         self.sources = v.Select(
             items=cp.sources,
             label=cm.viz.sources,
-            v_model=self.viz_model.sources,
+            v_model=[],
             multiple=True,
             chips=True,
         )
 
         self.planet_key = sw.PasswordField(label=cm.planet.key_label).hide()
 
-        self.semester = v.RadioGroup(
-            label=cm.viz.semester,
-            row=True,
-            v_model=None,
-            children=[
-                v.Radio(label=cp.planet_semesters[n], value=n)
-                for n in [*cp.planet_date_ranges[cp.planet_min_start_year]]
-            ],
-        )
-
-        su.hide_component(self.semester)
-
         self.bands = v.Select(
             items=[*cp.getAvailableBands()],
             label=cm.viz.bands,
             v_model=self.viz_model.bands,
         )
-        self.start = v.Select(
-            class_="mr-5 ml-5",
-            items=[y for y in range(cp.gee_min_start_year, cp.gee_max_end_year + 1)],
-            label=cm.viz.start_year,
-            v_model=self.viz_model.start_year,
+        self.mosaics = v.Select(
+            items=[],
+            label=cm.viz.mosaics,
+            v_model=[],
+            multiple=True,
+            chips=True,
+            dense=True,
         )
-        self.end = v.Select(
-            class_="ml-5 mr-5",
-            items=[y for y in range(cp.gee_min_start_year, cp.gee_max_end_year + 1)],
-            label=cm.viz.end_year,
-            v_model=self.viz_model.end_year,
-        )
-        years = v.Layout(xs=12, row=True, children=[self.start, self.end])
 
         image_size = v.Slider(
             step=500,
@@ -94,18 +77,14 @@ class InputTile(sw.Tile):
         )
 
         # bind the inputs
-        self.viz_model.bind(self.sources, "sources").bind(
-            self.planet_key, "planet_key"
-        ).bind(self.bands, "bands").bind(self.start, "start_year").bind(
-            self.end, "end_year"
-        ).bind(
-            self.driver, "driver"
-        ).bind(
-            image_size, "image_size"
-        ).bind(
-            square_size, "square_size"
-        ).bind(
-            self.semester, "semester"
+        (
+            self.viz_model.bind(self.sources, "sources")
+            .bind(self.planet_key, "planet_key")
+            .bind(self.bands, "bands")
+            .bind(self.mosaics, "mosaics")
+            .bind(self.driver, "driver")
+            .bind(image_size, "image_size")
+            .bind(square_size, "square_size")
         )
 
         # create the tile
@@ -118,13 +97,15 @@ class InputTile(sw.Tile):
                 self.sources,
                 self.planet_key,
                 self.bands,
-                years,
-                self.semester,
+                self.mosaics,
                 image_size,
                 square_size,
             ],
             alert=self.alert,
         )
+
+        # set the default driver
+        self._on_driver_change(None)
 
         # js behaviour
         self.btn.on_event("click", self._display_data)
@@ -139,43 +120,34 @@ class InputTile(sw.Tile):
         pts = self.tb_model.pts
         bands = self.viz_model.bands
         sources = self.viz_model.sources
-        start = self.viz_model.start_year
-        end = self.viz_model.end_year
+        mosaics = self.viz_model.mosaics
         square_size = self.viz_model.square_size
         image_size = self.viz_model.image_size
         planet_key = self.viz_model.planet_key
-        semester = self.viz_model.semester
 
         # check input
-        if not self.alert.check_input(driver, cm.viz.no_driver):
+        if not all(
+            [
+                self.alert.check_input(driver, cm.viz.no_driver),
+                self.alert.check_input(file, cm.viz.no_pts),
+                self.alert.check_input(bands, cm.viz.no_bands),
+                self.alert.check_input(mosaics, cm.viz.no_mosaics),
+                self.alert.check_input(square_size, cm.viz.no_square),
+                self.alert.check_input(image_size, cm.viz.no_image),
+            ]
+        ):
             return
-        if not self.alert.check_input(file, cm.viz.no_pts):
-            return
-        if not self.alert.check_input(bands, cm.viz.no_bands):
-            return
-        if not self.alert.check_input(start, cm.viz.no_start):
-            return
-        if not self.alert.check_input(end, cm.viz.no_end):
-            return
-        if not self.alert.check_input(square_size, cm.viz.no_square):
-            return
-        if not self.alert.check_input(image_size, cm.viz.no_image):
-            return
-        if start > end:
-            raise Exception(cm.viz.wrong_date)
 
         # test specific to drivers
-        if driver == "planet":
-            if not self.alert.check_input(planet_key, cm.viz.no_key):
-                return
-            if not self.alert.check_input(semester, cm.viz.no_semester):
-                return
-        elif driver == "gee":
-            if not self.alert.check_input(sources, cm.viz.no_sources):
-                return
+        if driver == "planet" and not self.alert.check_input(planet_key, cm.viz.no_key):
+            return
 
-        if driver == "planet":
-            cs.validate_key(planet_key, self.alert)
+        if driver == "gee" and not self.alert.check_input(sources, cm.viz.no_sources):
+            return
+
+        # validate
+        # if driver == "planet":
+        #    cs.validate_key(planet_key, self.alert)
 
         # generate a sum-up of the inputs
         msg = cs.set_msg(
@@ -183,8 +155,7 @@ class InputTile(sw.Tile):
             bands,
             sources,
             Path(file).stem,
-            start,
-            end,
+            mosaics,
             image_size,
             square_size,
             driver,
@@ -200,40 +171,35 @@ class InputTile(sw.Tile):
     def _on_driver_change(self, change):
         """adapt the inputs to the requested sources"""
 
+        # get the driver
+        driver = self.driver.v_model
+
         # empty the datas
         self.reset_inputs()
 
-        if change["new"] == "planet":
+        if driver == "planet":
+
             # remove source
             su.hide_component(self.sources)
 
             # display password
             self.planet_key.show()
 
-            # display semesters
-            su.show_component(self.semester)
-            self.semester.v_model = "S1"
-
             # change bands options and select the default rgb
             self.bands.items = [*cp.planet_bands_combo]
             self.bands.v_model = [*cp.planet_bands_combo][0]
 
             # adapt dates to available data and default to all available
-            self.start.items = [
-                y for y in range(cp.planet_min_start_year, cp.planet_max_end_year + 1)
+            self.mosaics.mosaics = [
+                y
+                for y in range(cp.planet_max_end_year, cp.planet_min_start_year - 1, -1)
             ]
-            self.start.v_model = cp.planet_min_start_year
-            self.end.items = [
-                y for y in range(cp.planet_min_start_year, cp.planet_max_end_year + 1)
-            ]
-            self.end.v_model = cp.planet_max_end_year
+            self.mosaics.v_model = []
 
-        elif change["new"] == "gee":
+        elif driver == "gee":
+
             # remove password
             self.planet_key.hide()
-
-            # remove semester
-            su.hide_component(self.semester)
 
             # add source and default to landsat
             su.show_component(self.sources)
@@ -244,25 +210,19 @@ class InputTile(sw.Tile):
             self.bands.v_model = [*cp.getAvailableBands()][0]
 
             # adapt dates to available data
-            self.start.items = [
-                y for y in range(cp.gee_min_start_year, cp.gee_max_end_year + 1)
+            self.mosaics.items = [
+                y for y in range(cp.gee_max_end_year, cp.gee_min_start_year - 1, -1)
             ]
-            self.start.v_model = 2005
-            self.end.items = [
-                y for y in range(cp.gee_min_start_year, cp.gee_max_end_year + 1)
-            ]
-            self.end.v_model = 2018
+            self.mosaics.v_model = []
 
         return
 
     def reset_inputs(self):
         """reset all the inputs"""
 
-        self.sources.v_model = None
+        self.sources.v_model = []
         self.planet_key.v_model = ""  # I cannot set to None it make bind bugging
         self.bands.v_model = None
-        self.start.v_model = None
-        self.end.v_model = None
-        self.semester.v_model = None
+        self.mosaics.v_model = []
 
         return

@@ -4,7 +4,7 @@ import ipyvuetify as v
 
 
 def set_msg(
-    pts, bands_combo, sources, basename, start, end, image_size, square_size, driver
+    pts, bands_combo, sources, basename, mosaics, image_size, square_size, driver
 ):
 
     # transform sources in a str
@@ -32,7 +32,7 @@ def set_msg(
                     Using the <b>{bands_combo}</b> band combination
                 </li>
                 <li>
-                    Using images from <b>{start}</b> to <b>{end}</b>
+                    Using mosaics from <b>{",".join(mosaics)}</b>
                 </li>
                 <li>
                     Using thumbnails of <b>{image_size}x{image_size}</b> m\u00B2
@@ -46,7 +46,7 @@ def set_msg(
             </ul>
             
             <p>
-                If you agree with these input you can start the downloading, if not please change the inputs in the previous tiles
+                If you agree with these input you can start the downloading, if not please change the inputs in the previous panels
             </p>
         </div>
     """
