@@ -13,11 +13,14 @@ from component.message import cm
 
 
 class TestTile(sw.Tile):
-    def __init__(self):
+    def __init__(self, file_tile):
 
         # create the widgets
         txt = sw.Markdown(cm.table.test.txt)
         self.alert = sw.Alert()
+
+        # get the file_tile to further use
+        self.file_tile = file_tile
 
         # create the tile
         super().__init__(
@@ -38,7 +41,10 @@ class TestTile(sw.Tile):
         test_file = cs.download_test_file(self.alert)
 
         # add the file name to the file selector
-        # need to update the fileinput component
+        self.file_tile.file_select.fileInput.select_file(test_file)
+
+        # trigger the validation
+        self.file_tile.btn.fire_event("click", None)
 
         return
 
@@ -53,12 +59,12 @@ class FileTile(sw.Tile):
         self.m = m
 
         # create widgets
-        file_select = sw.LoadTableField()
+        self.file_select = sw.LoadTableField()
 
         # bind it to the model
         self.alert = sw.Alert()
 
-        self.model.bind(file_select, "json_table")
+        self.model.bind(self.file_select, "json_table")
 
         # create the tile
         super().__init__(
@@ -66,7 +72,7 @@ class FileTile(sw.Tile):
             title=cm.table.title,
             btn=sw.Btn(cm.table.btn),
             alert=self.alert,
-            inputs=[file_select],
+            inputs=[self.file_select],
         )
 
         # js behaviour

@@ -71,7 +71,7 @@
             "txt": "By clicking on the following btn you'll download a test dataset of points. This file will be downloaded to your SEPAL `~/downloads` folder.",
             "btn": "Download the test dataset",
             "title": "Download test data File",
-            "msg": "The test dataset have been downloaded. It will be available in the \"{}/{}.csv\" folder of your sepal account."
+            "msg": "The test dataset have been downloaded and automatically loaded. It will be available at \"{}\" in your SEPAL folders."
         },
         "map": {
             "title": "Display points"

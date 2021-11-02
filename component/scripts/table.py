@@ -55,9 +55,9 @@ def download_test_file(output):
     # download the file to the download directory
     shutil.copy(cp.test_dataset, cp.sepal_down_dir)
 
-    # update the output
-    output.add_live_msg(
-        cm.table.test.msg.format(cp.sepal_down_dir, cp.test_dataset.stem), "success"
-    )
+    dst = cp.sepal_down_dir / cp.test_dataset.name
 
-    return cp.sepal_down_dir
+    # update the output
+    output.add_live_msg(cm.table.test.msg.format(dst), "success")
+
+    return dst
