@@ -1,6 +1,7 @@
 import json
 import warnings
 from pathlib import Path
+import time
 
 from sepal_ui import sepalwidgets as sw
 from sepal_ui.scripts import utils as su
@@ -110,6 +111,29 @@ class InputTile(sw.Tile):
         # js behaviour
         self.btn.on_event("click", self._display_data)
         self.driver.observe(self._on_driver_change, "v_model")
+        self.planet_key.on_event("blur", self._check_key)
+
+    @su.switch("disabled", "loading", on_widgets=["planet_key", "mosaics"])
+    def _check_key(self, widget, event, data):
+
+        # reset everything related to mosaics and password
+        self.planet_key.error_messages = None
+        self.mosaics.items = []
+        self.mosaics.v_model = []
+
+        # exit if value is None
+        if not self.planet_key.v_model:
+            return
+
+        # check the key and exit if it's not valid
+        if not cs.validate_key(self.planet_key.v_model):
+            self.planet_key.error_messages = [cm.planet.invalid_key]
+            return
+
+        # display the mosaics names
+        self.mosaics.items = cs.get_mosaics()
+
+        return
 
     @su.loading_button(debug=True)
     def _display_data(self, widget, event, data):
@@ -144,10 +168,6 @@ class InputTile(sw.Tile):
 
         if driver == "gee" and not self.alert.check_input(sources, cm.viz.no_sources):
             return
-
-        # validate
-        # if driver == "planet":
-        #    cs.validate_key(planet_key, self.alert)
 
         # generate a sum-up of the inputs
         msg = cs.set_msg(
@@ -190,10 +210,7 @@ class InputTile(sw.Tile):
             self.bands.v_model = [*cp.planet_bands_combo][0]
 
             # adapt dates to available data and default to all available
-            self.mosaics.mosaics = [
-                y
-                for y in range(cp.planet_max_end_year, cp.planet_min_start_year - 1, -1)
-            ]
+            self.mosaics.items = []
             self.mosaics.v_model = []
 
         elif driver == "gee":

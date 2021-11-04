@@ -6,6 +6,8 @@ from itertools import product
 import threading
 from concurrent import futures
 from functools import partial
+import re
+from datetime import datetime
 
 from planet import api
 from ipyleaflet import TileLayer
@@ -29,7 +31,6 @@ planet.mosaic_name = "planet_medres_normalized_analytic_{}_mosaic"
 planet.data = "Planet MedRes"
 
 # attributes
-
 planet.valid = False
 planet.key = None
 planet.client = None
@@ -44,10 +45,13 @@ def check_key():
     return
 
 
-def validate_key(key, out):
+def validate_key(key):
     """Validate the API key and save it the key variable"""
 
-    out.add_msg(cm.planet.test_key)
+    # reset everything
+    planet.valid = False
+    planet.key = None
+    planet.client = None
 
     # get all the subscriptions
     resp = requests.get(planet.url, auth=(key, ""))
@@ -55,7 +59,7 @@ def validate_key(key, out):
 
     # only continue if the resp was 200
     if resp.status_code != 200:
-        raise Exception(subs["message"])
+        return planet.valid
 
     # check the subscription validity
     # stop the execution if it's not the case
@@ -65,11 +69,57 @@ def validate_key(key, out):
     # autheticate to planet
     planet.client = api.ClientV1(api_key=key)
 
+    # set the key in the singleton class
     planet.key = key
 
-    out.add_msg(cm.planet.valid_key, "success")
+    return planet.valid
 
-    return
+
+def get_mosaics():
+    """Return the available mosaics as a list of items for a v.Select object, retur None if not valid"""
+
+    # create the regex to match the different know plaent datasets
+    VISUAL = re.compile("^planet_medres_visual")  # will be removed from the selection
+    ANALYTIC_MONTHLY = re.compile(
+        "^planet_medres_normalized_analytic_\d{4}-\d{2}_mosaic$"
+    )  # NICFI monthly
+    ANALYTIC_BIANUAL = re.compile(
+        "^planet_medres_normalized_analytic_\d{4}-\d{2}_\d{4}-\d{2}_mosaic$"
+    )  # NICFI bianual
+
+    # init the results from the beggining
+    res = []
+
+    # exit if the key is not valid
+    if not planet.valid:
+        return res
+
+    # filter the mosaics in 3 groups
+    bianual, monthly, other = ([], [], [])
+    for m in planet.client.get_mosaics().get()["mosaics"]:
+        name = m["name"]
+        if ANALYTIC_MONTHLY.match(name):
+            year = name[34:38]
+            start = datetime.strptime(name[39:41], "%m").strftime("%b")
+            monthly.append({"text": f"{start} {year}", "value": name})
+        elif ANALYTIC_BIANUAL.match(name):
+            year = name[34:38]
+            start = datetime.strptime(name[39:41], "%m").strftime("%b")
+            end = datetime.strptime(name[47:49], "%m").strftime("%b")
+            bianual.append({"text": f"{start}-{end} {year}", "value": name})
+        elif not VISUAL.match(name):
+            other.append({"text": name, "value": name})
+
+    # fill the results with the found mosaics
+    if len(bianual):
+        res += [{"header": "NICFI bianual"}] + bianual
+    if len(monthly):
+        res += [{"header": "NICFI monthly"}] + monthly
+    if len(other):
+        res += [{"header": "other"}] + other
+
+    print(res)
+    return res
 
 
 def get_planet_vrt(pts, start, end, square_size, file, bands, semester, out):
