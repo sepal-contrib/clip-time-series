@@ -19,7 +19,7 @@ from component import parameter as cp
 ee.Initialize()
 
 
-def is_pdf(file, bands, start, end):
+def is_pdf(file, bands):
     """check if the pdf is already existing, return false if not"""
 
     # get the filename
@@ -29,17 +29,14 @@ def is_pdf(file, bands, start, end):
     name_bands = "_".join(bands.split(", "))
 
     # pdf name
-    pdf_file = cp.result_dir.joinpath(f"{filename}_{name_bands}_{start}_{end}.pdf")
+    pdf_file = cp.result_dir.joinpath(f"{filename}_{name_bands}.pdf")
 
     return pdf_file.is_file()
 
 
 def get_pdf(
-    file, start, end, image_size, square_size, vrt_list, title_list, bands, pts, output
+    file, mosaics, image_size, square_size, vrt_list, title_list, bands, pts, output
 ):
-
-    # check dates
-    range_year = [y for y in range(start, end + 1)]
 
     # get the filename
     filename = Path(file).stem
@@ -48,7 +45,7 @@ def get_pdf(
     name_bands = "_".join(bands.split(", "))
 
     # pdf name
-    pdf_file = cp.result_dir.joinpath(f"{filename}_{name_bands}_{start}_{end}.pdf")
+    pdf_file = cp.result_dir / f"{filename}_{name_bands}.pdf"
 
     # create a geopandas of square buffer
     # they will only be used in 3857 no need to reproject to 4326
@@ -62,15 +59,15 @@ def get_pdf(
     gdf_buffers = gdf_buffers.to_crs("EPSG:4326")
 
     # get the disposition in col and line
-    nb_col, nb_line = cp.get_dims(end - start)
+    nb_col, nb_line = cp.get_dims(len(mosaics))
 
     pdf_tmps = []
-    output.reset_progress(len(gdf_buffers), "Pdf page created")
+    output.reset_progress(len(pts), "Pdf page created")
     for index, row in gdf_buffers.iterrows():
 
         name = re.sub("[^a-zA-Z\d\-\_]", "_", unidecode(str(row["id"])))
 
-        pdf_tmp = cp.tmp_dir.joinpath(f"{filename}_{name_bands}_tmp_pts_{name}.pdf")
+        pdf_tmp = cp.tmp_dir / f"{filename}_{name_bands}_tmp_pts_{name}.pdf"
         pdf_tmps.append(pdf_tmp)
 
         if pdf_tmp.is_file():
@@ -93,18 +90,16 @@ def get_pdf(
             # display the images in a fig and export it as a pdf page
             placement_id = 0
 
-            for year in range_year:
+            for m in mosaics:
 
                 # load the file
-                file = vrt_list[year]
+                file = vrt_list[m]
 
                 # extract the buffer bounds
-                minx, miny, maxx, maxy = row["geometry"].bounds
+                bounds = row["geometry"].bounds
 
                 with rio.open(file) as f:
-                    data = f.read(
-                        window=from_bounds(minx, miny, maxx, maxy, f.transform)
-                    )
+                    data = f.read(window=from_bounds(*bounds, f.transform))
 
                     # reproject to 3857
                     # I want the final image to be as square not a rectangle
@@ -116,9 +111,7 @@ def get_pdf(
                         src_crs=src_crs,
                         dst_crs=dst_crs,
                     )
-                    minx, miny, maxx, maxy = warp.transform_bounds(
-                        src_crs, dst_crs, minx, miny, maxx, maxy
-                    )
+                    bounds = warp.transform_bounds(src_crs, dst_crs, *bounds)
 
                 bands = []
                 for i in range(3):
@@ -150,9 +143,7 @@ def get_pdf(
 
                 place = cp.getPositionPdf(placement_id, nb_col)
                 ax = axes[place[0], place[1]]
-                ax.imshow(
-                    data, interpolation="nearest", extent=[minx, maxx, miny, maxy]
-                )
+                ax.imshow(data, interpolation="nearest", extent=list(bounds))
                 ax.plot(
                     x_polygon,
                     y_polygon,
@@ -160,7 +151,7 @@ def get_pdf(
                     linewidth=cp.polygon_width,
                 )
                 ax.set_title(
-                    str(year) + " " + title_list[year][index],
+                    str(m) + " " + title_list[m][index],
                     x=0.0,
                     y=1.0,
                     fontsize="small",

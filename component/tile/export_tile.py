@@ -57,31 +57,28 @@ class ExportData(sw.Tile):
         pts = self.tb_model.pts
         bands = self.viz_model.bands
         sources = self.viz_model.sources
-        start = self.viz_model.start_year
-        end = self.viz_model.end_year
         square_size = self.viz_model.square_size
         image_size = self.viz_model.image_size
-        semester = self.viz_model.semester
+        mosaics = self.viz_model.mosaics
 
-        if cs.is_pdf(file, bands, start, end):
+        if cs.is_pdf(file, bands):
             self.alert.add_live_msg("Pdf already exist", "success")
             return
 
         # create the vrt from gee images
         if self.viz_model.driver == "planet":
             vrt_list, title_list = cs.get_planet_vrt(
-                pts, start, end, image_size, file, bands, semester, self.alert
+                pts, mosaics, image_size, file, bands, self.alert
             )
         elif self.viz_model.driver == "gee":
             vrt_list, title_list = cs.get_gee_vrt(
-                pts, start, end, image_size, file, bands, sources, self.alert
+                pts, mosaics, image_size, file, bands, sources, self.alert
             )
 
         # export as pdf
         pdf_file = cs.get_pdf(
             file,
-            start,
-            end,
+            mosaics,
             image_size,
             square_size,
             vrt_list,

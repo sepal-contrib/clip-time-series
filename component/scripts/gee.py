@@ -71,13 +71,10 @@ def getImage(sources, bands, mask, year):
     return (clip, satelliteId)
 
 
-def get_gee_vrt(pts, start, end, square_size, file, bands, sources, output):
+def get_gee_vrt(pts, mosaics, square_size, file, bands, sources, output):
 
     # get the filename
     filename = Path(file).stem
-
-    # create a range_year element to simplify next for loops
-    range_year = [y for y in range(start, end + 1)]
 
     # transform the stored points into ee points
     ee_pts = [ee.Geometry.Point(row.lng, row.lat) for _, row in pts.iterrows()]
@@ -90,16 +87,16 @@ def get_gee_vrt(pts, start, end, square_size, file, bands, sources, output):
 
     # create a filename list
     descriptions = {}
-    for year in range_year:
+    for year in mosaics:
         descriptions[year] = f"{filename}_{name_bands}_{year}"
 
     # load the data directly in SEPAL
     satellites = {}  # contain the names of the used satellites
 
     nb_points = max(1, len(ee_buffers) - 1)
-    total_images = (end - start + 1) * nb_points
+    total_images = len(mosaics) * nb_points
     output.reset_progress(total_images, "Image loaded")
-    for i, year in enumerate(range_year):
+    for year in mosaics:
 
         satellites[year] = [None] * len(ee_buffers)
 
@@ -122,7 +119,7 @@ def get_gee_vrt(pts, start, end, square_size, file, bands, sources, output):
 
     # create a single vrt per year
     vrt_list = {}
-    for year in range_year:
+    for year in mosaics:
 
         # retreive the file names
         vrt_path = cp.tmp_dir.joinpath(f"{descriptions[year]}.vrt")
@@ -140,7 +137,7 @@ def get_gee_vrt(pts, start, end, square_size, file, bands, sources, output):
 
     title_list = {
         y: {j: cp.getShortname(satellites[y][j]) for j in range(len(ee_buffers))}
-        for y in range_year
+        for y in mosaics
     }
 
     # return the file
