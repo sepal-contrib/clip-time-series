@@ -27,7 +27,6 @@ planet = SimpleNamespace()
 
 # parameters
 planet.url = "https://api.planet.com/auth/v1/experimental/public/my/subscriptions"
-planet.mosaic_name = "planet_medres_normalized_analytic_{}_mosaic"
 planet.data = "Planet MedRes"
 
 # attributes
@@ -122,13 +121,10 @@ def get_mosaics():
     return res
 
 
-def get_planet_vrt(pts, start, end, square_size, file, bands, semester, out):
+def get_planet_vrt(pts, mosaics, square_size, file, bands, out):
 
     # get the filename
     filename = Path(file).stem
-
-    # create a range_year element to simplyfy next for loops
-    range_year = [y for y in range(start, end + 1)]
 
     # create the buffer grid
     gdf_buffers = pts.to_crs("EPSG:3857")
@@ -141,15 +137,14 @@ def get_planet_vrt(pts, start, end, square_size, file, bands, semester, out):
     # create a vrt for each year
     vrt_list = {}
     nb_points = max(1, len(planet_grid) - 1)
-    total_img = (end - start + 1) * nb_points
+    total_img = len(mosaics) * nb_points
     out.reset_progress(total_img, "Image loaded")
-    for i, year in enumerate(range_year):
+    for m in mosaics:
 
         # get the mosaic from the mosaic name
-        mosaic_name = planet.mosaic_name.format(cp.planet_date_ranges[year][semester])
-        mosaics = planet.client.get_mosaics().get()["mosaics"]
-        mosaic_names = [m["name"] for m in mosaics]
-        mosaic = mosaics[mosaic_names.index(mosaic_name)]
+        mosaic_list = planet.client.get_mosaics().get()["mosaics"]
+        mosaic_names = [i["name"] for i in mosaic_list]
+        mosaic = mosaic_list[mosaic_names.index(m)]
 
         # construct the quad list
         quads = [
@@ -158,7 +153,7 @@ def get_planet_vrt(pts, start, end, square_size, file, bands, semester, out):
 
         download_params = {
             "filename": filename,
-            "year": year,
+            "name": m,
             "mosaic": mosaic,
             "bands": bands,
             "file_list": [],
@@ -174,7 +169,7 @@ def get_planet_vrt(pts, start, end, square_size, file, bands, semester, out):
             raise Exception("No image have been found on Planet lab servers")
 
         # create a vrt out of it
-        vrt_path = cp.tmp_dir.joinpath(f"{filename}_{year}.vrt")
+        vrt_path = cp.tmp_dir.joinpath(f"{filename}_{m}.vrt")
         ds = gdal.BuildVRT(str(vrt_path), file_list)
         ds.FlushCache()
 
@@ -182,15 +177,11 @@ def get_planet_vrt(pts, start, end, square_size, file, bands, semester, out):
         if not vrt_path.is_file():
             raise Exception(f"the vrt {vrt_path} was not created")
 
-        vrt_list[year] = vrt_path
+        vrt_list[m] = vrt_path
 
     # create a title list to be consistent
     title_list = {
-        y: {
-            i: f"{planet.data} {cp.planet_semesters[semester]}"
-            for i in range(len(gdf_buffers))
-        }
-        for y in range_year
+        m: {i: f"{planet.data} {m}" for i in range(len(gdf_buffers))} for m in mosaics
     }
 
     return vrt_list, title_list
@@ -282,11 +273,11 @@ def get_planet_grid(squares, out):
     return grid_gdf
 
 
-def get_quad(quad_id, filename, year, mosaic, bands, file_list, out, lock=None):
+def get_quad(quad_id, filename, name, mosaic, bands, file_list, out, lock=None):
     """get one single quad from parameters"""
 
     # check file existence
-    file = cp.tmp_dir.joinpath(f"{filename}_{year}_{quad_id}.tif")
+    file = cp.tmp_dir.joinpath(f"{filename}_{name}_{quad_id}.tif")
 
     if file.is_file():
         if lock:
@@ -295,7 +286,7 @@ def get_quad(quad_id, filename, year, mosaic, bands, file_list, out, lock=None):
 
     else:
 
-        tmp_file = cp.tmp_dir.joinpath(f"{filename}_{year}_{quad_id}_tmp.tif")
+        tmp_file = cp.tmp_dir.joinpath(f"{filename}_{name}_{quad_id}_tmp.tif")
 
         # to avoid the downloading of non existing quads
         try:
