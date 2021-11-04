@@ -32,7 +32,7 @@ def set_msg(
                     Using the <b>{bands_combo}</b> band combination
                 </li>
                 <li>
-                    Using mosaics from <b>{",".join(mosaics)}</b>
+                    Using <b>{len(mosaics)}</b> different mosaics
                 </li>
                 <li>
                     Using thumbnails of <b>{image_size}x{image_size}</b> m\u00B2
