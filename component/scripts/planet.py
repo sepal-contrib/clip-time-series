@@ -27,21 +27,62 @@ planet = SimpleNamespace()
 
 # parameters
 planet.url = "https://api.planet.com/auth/v1/experimental/public/my/subscriptions"
-planet.data = "Planet MedRes"
+planet.data = "Planet"
 
 # attributes
 planet.valid = False
 planet.key = None
 planet.client = None
 
+# create the regex to match the different know planet datasets
+VISUAL = re.compile("^planet_medres_visual")  # will be removed from the selection
+ANALYTIC_MONTHLY = re.compile(
+    "^planet_medres_normalized_analytic_\d{4}-\d{2}_mosaic$"
+)  # NICFI monthly
+ANALYTIC_BIANUAL = re.compile(
+    "^planet_medres_normalized_analytic_\d{4}-\d{2}_\d{4}-\d{2}_mosaic$"
+)  # NICFI bianual
+
 
 def check_key():
-    """raise an error if the key is not validataed"""
+    """raise an error if the key is not validated"""
 
     if not planet.valid:
         raise Exception(cm.planet.invalid_key)
 
     return
+
+
+def mosaic_name(mosaic):
+    """
+    Give back the shorten name of the mosaic so that it can be displayed on the thumbnails
+
+    Args:
+        mosaic (str): the mosaic full name
+
+    Return:
+        (str, str): the type and the shorten name of the mosaic
+    """
+
+    if ANALYTIC_MONTHLY.match(mosaic):
+        year = mosaic[34:38]
+        start = datetime.strptime(mosaic[39:41], "%m").strftime("%b")
+        res = f"{start} {year}"
+        type_ = "ANALYTIC_MONTHLY"
+    elif ANALYTIC_BIANUAL.match(mosaic):
+        year = mosaic[34:38]
+        start = datetime.strptime(mosaic[39:41], "%m").strftime("%b")
+        end = datetime.strptime(mosaic[47:49], "%m").strftime("%b")
+        res = f"{start}-{end} {year}"
+        type_ = "ANALYTIC_BIANUAL"
+    elif VISUAL.match(mosaic):
+        res = None  # ignored in this module
+        type_ = "VISUAL"
+    else:
+        res = mosaic[:15]  # not optimal but that's the max
+        type_ = "OTHER"
+
+    return type_, res
 
 
 def validate_key(key):
@@ -77,16 +118,7 @@ def validate_key(key):
 def get_mosaics():
     """Return the available mosaics as a list of items for a v.Select object, retur None if not valid"""
 
-    # create the regex to match the different know plaent datasets
-    VISUAL = re.compile("^planet_medres_visual")  # will be removed from the selection
-    ANALYTIC_MONTHLY = re.compile(
-        "^planet_medres_normalized_analytic_\d{4}-\d{2}_mosaic$"
-    )  # NICFI monthly
-    ANALYTIC_BIANUAL = re.compile(
-        "^planet_medres_normalized_analytic_\d{4}-\d{2}_\d{4}-\d{2}_mosaic$"
-    )  # NICFI bianual
-
-    # init the results from the beggining
+    # init the results from the begining
     res = []
 
     # exit if the key is not valid
@@ -97,17 +129,14 @@ def get_mosaics():
     bianual, monthly, other = ([], [], [])
     for m in planet.client.get_mosaics().get()["mosaics"]:
         name = m["name"]
-        if ANALYTIC_MONTHLY.match(name):
-            year = name[34:38]
-            start = datetime.strptime(name[39:41], "%m").strftime("%b")
-            monthly.append({"text": f"{start} {year}", "value": name})
-        elif ANALYTIC_BIANUAL.match(name):
-            year = name[34:38]
-            start = datetime.strptime(name[39:41], "%m").strftime("%b")
-            end = datetime.strptime(name[47:49], "%m").strftime("%b")
-            bianual.append({"text": f"{start}-{end} {year}", "value": name})
-        elif not VISUAL.match(name):
-            other.append({"text": name, "value": name})
+        type_, short = mosaic_name(name)
+
+        if type_ == "ANALYTIC_MONTHLY":
+            monthly.append({"text": short, "value": name})
+        elif type_ == "ANALYTIC_BIANUAL":
+            bianual.append({"text": short, "value": name})
+        elif type_ == "OTHER":
+            monthly.append({"text": short, "value": name})
 
     # fill the results with the found mosaics
     if len(bianual):
@@ -117,7 +146,6 @@ def get_mosaics():
     if len(other):
         res += [{"header": "other"}] + other
 
-    print(res)
     return res
 
 
@@ -181,7 +209,8 @@ def get_planet_vrt(pts, mosaics, square_size, file, bands, out):
 
     # create a title list to be consistent
     title_list = {
-        m: {i: f"{planet.data} {m}" for i in range(len(gdf_buffers))} for m in mosaics
+        m: {i: f"{planet.data} {mosaic_name(m)[1]}" for i in range(len(gdf_buffers))}
+        for m in mosaics
     }
 
     return vrt_list, title_list

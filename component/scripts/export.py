@@ -78,14 +78,16 @@ def get_pdf(
 
             page_title = f"Pt_{name} (lat:{row['lat']:.5f}, lng:{row['lng']:.5f})"
 
-            fig, axes = plt.subplots(nb_line, nb_col, figsize=(11.69, 8.27), dpi=500)
+            fig, axes = plt.subplots(
+                nb_line, nb_col, figsize=(11.69, 8.27), dpi=500, constrained_layout=True
+            )
 
             # I reshape by default to avoid a crash
             # if nb_line = 1 the dimension of the table is reduced
             axes = np.array(axes, dtype=object).reshape(nb_line, nb_col)
 
             fig.suptitle(page_title, fontsize=16, fontweight="bold")
-            fig.set_tight_layout(True)
+            # fig.set_tight_layout(True)
 
             # display the images in a fig and export it as a pdf page
             placement_id = 0
@@ -151,7 +153,7 @@ def get_pdf(
                     linewidth=cp.polygon_width,
                 )
                 ax.set_title(
-                    str(m) + " " + title_list[m][index],
+                    title_list[m][index],
                     x=0.0,
                     y=1.0,
                     fontsize="small",

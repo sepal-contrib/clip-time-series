@@ -136,7 +136,10 @@ def get_gee_vrt(pts, mosaics, square_size, file, bands, sources, output):
         vrt_list[year] = vrt_path
 
     title_list = {
-        y: {j: cp.getShortname(satellites[y][j]) for j in range(len(ee_buffers))}
+        y: {
+            j: f"{y} {cp.getShortname(satellites[y][j])}"
+            for j in range(len(ee_buffers))
+        }
         for y in mosaics
     }
 
