@@ -51,7 +51,7 @@ def setMap(model, m):
         m.add_layer(layer)
 
     # recenter the map
-    m.set_center(0, 0, zoom=2)
+    m.zoom_bounds(model.raw_geometry.total_bounds)
 
     return
 

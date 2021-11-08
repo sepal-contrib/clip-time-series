@@ -97,10 +97,6 @@ class FileTile(sw.Tile):
 
     def _change_type(self, change):
 
-        # empty the selectors
-        self.table_select.reset()
-        self.vector_select.reset()
-
         if change["new"] == cp.types[0]:  # table
             self.table_select.show()
             self.vector_select.hide()
@@ -109,6 +105,10 @@ class FileTile(sw.Tile):
             self.vector_select.show()
         else:
             raise ValueError("This is not a recognized type")
+
+        # empty the selectors
+        self.table_select.reset()
+        self.vector_select.reset()
 
         return self
 
@@ -120,9 +120,6 @@ class FileTile(sw.Tile):
         id_ = table["id_column"]
         file = table["pathname"]
 
-        print(table)
-        print(id_)
-
         # check the variables
         if not all(
             [
@@ -131,10 +128,6 @@ class FileTile(sw.Tile):
             ]
         ):
             return
-
-        print("toto")
-
-        print(self.model.types)
 
         if self.model.types == cp.types[0]:  # table
             lat = table["lat_column"]
@@ -151,7 +144,6 @@ class FileTile(sw.Tile):
         elif self.model.types == cp.types[1]:  # vector
 
             gdf = gdp.read_file(file)
-            print(gdf)
             gdf = gdf.filter([id_, "geometry"])
             gdf = gdf.rename(columns={id_: "id"})
 
