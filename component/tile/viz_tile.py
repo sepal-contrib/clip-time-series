@@ -89,6 +89,7 @@ class InputTile(sw.Tile):
             .bind(self.driver, "driver")
             .bind(image_size, "image_size")
             .bind(square_size, "square_size")
+            .bind(self.w_id, "id_list")
         )
 
         # create the tile
@@ -144,6 +145,7 @@ class InputTile(sw.Tile):
     def _display_data(self, widget, event, data):
 
         # load the input
+        id_list = self.viz_model.id_list
         driver = self.viz_model.driver
         file = self.tb_model.json_table["pathname"]
         pts = self.tb_model.pts
@@ -157,6 +159,7 @@ class InputTile(sw.Tile):
         # check input
         if not all(
             [
+                self.alert.check_input(id_list, cm.viz.no_id_list),
                 self.alert.check_input(driver, cm.viz.no_driver),
                 self.alert.check_input(file, cm.viz.no_pts),
                 self.alert.check_input(bands, cm.viz.no_bands),
@@ -174,9 +177,14 @@ class InputTile(sw.Tile):
         if driver == "gee" and not self.alert.check_input(sources, cm.viz.no_sources):
             return
 
+        # filter the points
+        self.viz_model.pts = self.tb_model.pts.copy()
+        if id_list != [cw.IdSelect.ALL]:
+            self.viz_model.pts = self.viz_model.pts[self.viz_model.pts.id.isin(id_list)]
+
         # generate a sum-up of the inputs
         msg = cs.set_msg(
-            pts,
+            self.viz_model.pts,
             bands,
             sources,
             Path(file).stem,

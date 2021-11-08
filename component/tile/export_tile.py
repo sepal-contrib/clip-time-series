@@ -54,7 +54,7 @@ class ExportData(sw.Tile):
 
         # rename variable for the sake of simplified writting
         file = self.tb_model.json_table["pathname"]
-        pts = self.tb_model.pts
+        pts = self.viz_model.pts
         bands = self.viz_model.bands
         sources = self.viz_model.sources
         square_size = self.viz_model.square_size

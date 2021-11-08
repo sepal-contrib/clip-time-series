@@ -48,7 +48,8 @@
         "no_mosaics": "Please select mosaics to be displayed",
         "no_driver": "No dirver has been provided, please choose between GEE and Planet",
         "no_key": "you are using the planet driver, please provide an API key",
-        "no_semester": "Please proved a semester to display"
+        "no_semester": "Please proved a semester to display",
+        "no_id_list": "Please provide the list of point you want to display"
     },
     "table": {
         "title": "Select a file",

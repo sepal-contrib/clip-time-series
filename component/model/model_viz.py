@@ -10,6 +10,7 @@ class VizModel(model.Model):
     # (full landsat in rgb from 2008 to 2018)
 
     # inputs
+    id_list = Any(["all"]).tag(sync=True)
     driver = Any(cp.drivers[0]).tag(sync=True)
     check = Any(False).tag(sync=True)
     bands = Any([*cp.getAvailableBands()][0]).tag(sync=True)

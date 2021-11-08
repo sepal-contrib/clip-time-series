@@ -5,7 +5,7 @@ from traitlets import observe
 
 class IdSelect(sw.SepalWidget, v.Select):
 
-    ALL = "All"
+    ALL = "all"
 
     def __init__(self):
 
