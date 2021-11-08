@@ -4,7 +4,7 @@ import shutil
 
 import pandas as pd
 import geemap
-from ipyleaflet import GeoJSON, MarkerCluster, Marker
+from ipyleaflet import GeoJSON, MarkerCluster, Marker, AwesomeIcon
 from sepal_ui import color
 
 from component.message import cm
@@ -12,13 +12,15 @@ from component import parameter as cp
 
 STYLE = {
     "stroke": True,
-    "color": color.success,
+    "color": "darkblue",
     "weight": 2,
     "opacity": 1,
     "fill": True,
-    "fillColor": color.success,
+    "fillColor": "darkblue",
     "fillOpacity": 0.4,
 }
+
+ICON = AwesomeIcon(name="", icon_color="white", marker_color="darkblue")
 
 
 def setMap(model, m):
@@ -33,14 +35,13 @@ def setMap(model, m):
     if model.types == cp.types[0]:
 
         # add the pts on the map
-        markers, popups = [], []
+        markers = []
         for index, row in model.raw_geometry.iterrows():
-            marker = Marker(location=(row.lat, row.lng), draggable=False)
+            marker = Marker(icon=ICON, location=(row.lat, row.lng), draggable=False)
             markers.append(marker)
-            popups.append(row.id)
 
         # display on the map
-        marker_cluster = MarkerCluster(markers=tuple(markers), popups=popups)
+        marker_cluster = MarkerCluster(markers=tuple(markers))
         m.add_layer(marker_cluster)
 
     # add the vector as a geojson
