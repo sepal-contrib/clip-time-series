@@ -4,45 +4,51 @@ import shutil
 
 import pandas as pd
 import geemap
+from ipyleaflet import GeoJSON, MarkerCluster, Marker
+from sepal_ui import color
 
 from component.message import cm
 from component import parameter as cp
 
-
-def isConform(file):
-    """perform several checks on the file given by the user retrun an error message if something is wrong else 0"""
-
-    # check if the file exist
-    if not os.path.isfile(file):
-        return cm.NOT_A_FILE.format(file)
-
-    # try to read the file
-    try:
-        df = pd.read_csv(file)
-    except:
-        return cm.ERROR_READING_FILE.format(file)
-
-    # validate
-    return 0
+STYLE = {
+    "stroke": True,
+    "color": color.success,
+    "weight": 2,
+    "opacity": 1,
+    "fill": True,
+    "fillColor": color.success,
+    "fillOpacity": 0.4,
+}
 
 
-def setMap(pts, m):
+def setMap(model, m):
     """create a map and a df list of points"""
 
-    # add the pts on the map
-    markers, popups = [], []
-    for index, row in pts.iterrows():
-        marker = geemap.Marker(location=(row.lat, row.lng), draggable=False)
-        markers.append(marker)
-        popups.append(index)
+    # empty the map
+    for l in m.layers:
+        if l.name != "CartoDB.DarkMatter":
+            m.remove_layer(l)
 
-    # remove the previous markers
-    if len(m.layers) > 1:  # only 1 layer + cardoDB.Positron
-        m.remove_last_layer()
+    # add markers in case of points
+    if model.types == cp.types[0]:
 
-    # display on the map
-    marker_cluster = geemap.MarkerCluster(markers=tuple(markers), popups=popups)
-    m.add_layer(marker_cluster)
+        # add the pts on the map
+        markers, popups = [], []
+        for index, row in model.raw_geometry.iterrows():
+            marker = Marker(location=(row.lat, row.lng), draggable=False)
+            markers.append(marker)
+            popups.append(row.id)
+
+        # display on the map
+        marker_cluster = MarkerCluster(markers=tuple(markers), popups=popups)
+        m.add_layer(marker_cluster)
+
+    # add the vector as a geojson
+    elif model.types == cp.types[1]:
+
+        data = model.raw_geometry.__geo_interface__
+        layer = GeoJSON(data=data, style=STYLE, name="shapes")
+        m.add_layer(layer)
 
     # recenter the map
     m.set_center(0, 0, zoom=2)

@@ -67,7 +67,7 @@
         "read_columns": "The dropdown have been updated with the header of your file : [{}]",
         "missing_input": "One of the column is unknown",
         "valid_columns": "Your columns have been validated",
-        "reapeated_input": "One of the input have been repeated. Each column must be different",
+        "types": "select types",
         "test": {
             "txt": "By clicking on the following btn you'll download a test dataset of points. This file will be downloaded to your SEPAL `~/downloads` folder.",
             "btn": "Download the test dataset",
