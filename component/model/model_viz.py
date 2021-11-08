@@ -22,3 +22,6 @@ class VizModel(model.Model):
 
     # planet inputs
     planet_key = Any(None).tag(sync=True)
+
+    # filtered point dataset
+    pts = Any(None).tag(sync=True)

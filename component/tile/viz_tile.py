@@ -10,6 +10,7 @@ import ipyvuetify as v
 from component.message import cm
 from component import parameter as cp
 from component import scripts as cs
+from component import widget as cw
 
 
 class InputTile(sw.Tile):
@@ -20,10 +21,9 @@ class InputTile(sw.Tile):
         self.tb_model = tb_model
 
         # Create alert
-
         self.alert = sw.Alert()
 
-        # create the widgets
+        # Create the widgets
         self.driver = v.RadioGroup(
             label=cm.viz.driver,
             row=True,
@@ -32,6 +32,8 @@ class InputTile(sw.Tile):
                 v.Radio(key=i, label=n, value=n) for i, n in enumerate(cp.drivers)
             ],
         )
+
+        self.w_id = cw.IdSelect()
 
         self.sources = v.Select(
             items=cp.sources,
@@ -54,6 +56,7 @@ class InputTile(sw.Tile):
             v_model=[],
             multiple=True,
             chips=True,
+            deletable_chips=True,
             dense=True,
         )
 
@@ -95,6 +98,7 @@ class InputTile(sw.Tile):
             btn=sw.Btn(cm.viz.btn),
             inputs=[
                 self.driver,
+                self.w_id,
                 self.sources,
                 self.planet_key,
                 self.bands,
@@ -112,6 +116,7 @@ class InputTile(sw.Tile):
         self.btn.on_event("click", self._display_data)
         self.driver.observe(self._on_driver_change, "v_model")
         self.planet_key.on_event("blur", self._check_key)
+        self.tb_model.observe(self._update_points, "pts")
 
     @su.switch("disabled", "loading", on_widgets=["planet_key", "mosaics"])
     def _check_key(self, widget, event, data):
@@ -243,3 +248,14 @@ class InputTile(sw.Tile):
         self.mosaics.v_model = []
 
         return
+
+    def _update_points(self, change):
+        """update the available point list when a new point file is selected"""
+
+        if change["new"] is None:
+            return
+
+        # set the items values
+        self.w_id.set_items(self.tb_model.pts.id.tolist())
+
+        return self
