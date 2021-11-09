@@ -75,18 +75,17 @@ def getImage(sources, bands, mask, year):
 
 def get_gee_vrt(geometry, mosaics, size, file, bands, sources, output):
 
+    #  guess if the geometry is only points
+    is_point = all([r.geometry.geom_type == "Point" for _, r in geometry.iterrows()])
+
     # get the filename
     filename = Path(file).stem
 
-    # extract the points as centroid for geometries
-    # build minimal buffer size
-    if all([r.geometry.geom_type == "Point" for _, r in geometry.iterrows()]):
-        ee_pts = [ee.Geometry.Point(row.lng, row.lat) for _, row in geometry.iterrows()]
-        size_list = [size for _ in geometry]
+    # create the points list
+    ee_pts = [ee.Geometry.Point(*g.centroid.coords) for g in geometry.geometry]
 
-    else:
-        ee_pts = [ee.Geometry.Point(*g.centroid.coords) for g in geometry.geometry]
-        size_list = [min_diagonal(g, size) for g in geometry.to_crs(3857).geometry]
+    # get the optimal size buffer
+    size_list = [min_diagonal(g, size) for g in geometry.to_crs(3857).geometry]
 
     # create the buffers
     ee_buffers = [pt.buffer(s / 2).bounds() for pt, s in zip(ee_pts, size_list)]

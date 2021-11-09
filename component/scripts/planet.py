@@ -153,32 +153,31 @@ def get_mosaics():
 
 def get_planet_vrt(geometry, mosaics, size, file, bands, out):
 
+    # guess if the file is only composed of points
+    is_points = all([r.geometry.geom_type == "Point" for _, r in geometry.iterrows()])
+
     # get the filename
     filename = Path(file).stem
 
-    # extract the points as centroid for geometries
-    # build minimal buffer size
-    if all([r.geometry.geom_type == "Point" for _, r in geometry.iterrows()]):
-        pts = geometry.copy()
-        size_dict = {id_: size for id_ in geometry.id}
+    # extract the points coordinates
+    pts = geometry.copy()
+    pts.geometry = pts.geometry.centroid
 
-    else:
-        pts = geometry.copy()
-        pts["geometry"] = pts["geometry"].centroid
-        size_dict = {
-            r.id: min_diagonal(r.geometry, size)
-            for _, r in geometry.to_crs(3857).iterrows()
-        }
+    # build the size dictionary
+    size_dict = {
+        r.id: min_diagonal(r.geometry, size)
+        for _, r in geometry.to_crs(3857).iterrows()
+    }
 
     # create the buffer grid
-    gdf_buffers = pts.to_crs(3857)
-    gdf_buffers["geometry"] = gdf_buffers.apply(
+    buffers = pts.to_crs(3857)
+    buffers.geometry = buffers.apply(
         lambda r: r.geometry.buffer(size_dict[r.id] / 2, cap_style=3), axis=1
     )
-    gdf_buffers = gdf_buffers.to_crs(4326)
+    buffers = buffers.to_crs(4326)
 
     # find all the quads that should be downloaded and serve them as a grid
-    planet_grid = get_planet_grid(gdf_buffers["geometry"], out)
+    planet_grid = get_planet_grid(buffers.geometry, out)
 
     # create a vrt for each year
     vrt_list = {}
@@ -227,7 +226,7 @@ def get_planet_vrt(geometry, mosaics, size, file, bands, out):
 
     # create a title list to be consistent
     title_list = {
-        m: {i: f"{planet.data} {mosaic_name(m)[1]}" for i in range(len(gdf_buffers))}
+        m: {i: f"{planet.data} {mosaic_name(m)[1]}" for i in range(len(buffers))}
         for m in mosaics
     }
 
@@ -252,9 +251,7 @@ def get_planet_grid(squares, out):
     aoi_bb = sg.box(*aoi_gdf.total_bounds)
 
     # compute the longitude and latitude in the apropriate CRS
-    crs_4326 = CRS.from_epsg(4326)
-    crs_3857 = CRS.from_epsg(3857)
-    crs_bounds = crs_3857.area_of_use.bounds
+    crs_bounds = CRS.from_epsg(3857).area_of_use.bounds
 
     proj = Transformer.from_crs(4326, 3857, always_xy=True)
     bl = proj.transform(crs_bounds[0], crs_bounds[1])
@@ -285,10 +282,7 @@ def get_planet_grid(squares, out):
     y_offset = np.nonzero(longitudes == lat_filter[0])[0][0]
 
     # create the grid
-    x = []
-    y = []
-    names = []
-    squares = []
+    x, y, names, squares = [], [], [], []
     for coords in product(range(len(lon_filter) - 1), range(len(lat_filter) - 1)):
 
         # get the x and y index
@@ -315,7 +309,7 @@ def get_planet_grid(squares, out):
     grid = grid.loc[mask]
 
     # project back to 4326
-    grid_gdf = grid.to_crs("EPSG:4326")
+    grid_gdf = grid.to_crs(4326)
 
     return grid_gdf
 

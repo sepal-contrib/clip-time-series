@@ -1,6 +1,7 @@
 from pathlib import Path
 from unidecode import unidecode
 import re
+import shutil
 
 import ee
 from matplotlib.backends.backend_pdf import PdfPages
@@ -31,7 +32,7 @@ def is_pdf(file, bands):
     name_bands = "_".join(bands.split(", "))
 
     # pdf name
-    pdf_file = cp.result_dir.joinpath(f"{filename}_{name_bands}.pdf")
+    pdf_file = cp.result_dir / f"{filename}_{name_bands}.pdf"
 
     return pdf_file.is_file()
 
@@ -47,6 +48,8 @@ def get_pdf(
     geometry,
     output,
 ):
+    # guess if the geometry is an point file or a shape file
+    is_point = all([r.geometry.geom_type == "Point" for _, r in geometry.iterrows()])
 
     # get the filename
     filename = Path(file).stem
@@ -57,42 +60,37 @@ def get_pdf(
     # pdf name
     pdf_file = cp.result_dir / f"{filename}_{name_bands}.pdf"
 
-    # extract the points as centroid for geometries
-    # build minimal buffer size
-    if all([r.geometry.geom_type == "Point" for _, r in geometry.iterrows()]):
-        pts = geometry.copy()
-        size_dict = {id_: image_size for id_ in geometry.id}
-        gdf_squares = pts.to_crs(3857)  # will be used in this projection
-        gdf_squares["geometry"] = gdf_squares.buffer(square_size / 2, cap_style=3)
+    # copy geometry to build the point gdf
+    pts = geometry.copy()
+    pts.geometry = pts.geometry if is_point else pts.geometry.centroid
 
-    else:
-        pts = geometry.copy()
-        pts["geometry"] = pts["geometry"].centroid
-        size_dict = {
-            r.id: min_diagonal(r.geometry, image_size)
-            for _, r in geometry.to_crs(3857).iterrows()
-        }
-        gdf_squares = geometry.to_crs(3857)
+    # build the geometries that will be drawn on the thumbnails
+    # can stay in EPSG:3857 as it will be used in this projection
+    geoms = geometry.to_crs(3857)
+    geoms.geometry = (
+        geoms.buffer(square_size / 2, cap_style=3) if is_point else geoms.geometry
+    )
 
-    gdf_squares.to_file("test_squares.geojson", driver="GeoJSON")
-    pts.to_file("test_pts.geojson", driver="GeoJSON")
+    # build the dictionary to use to build the images thumbnails
+    size_dict = {}
+    for _, r in geometry.to_crs(3857).iterrows():
+        size_dict[r.id] = min_diagonal(r.geometry, image_size)
 
     # create the buffer grid
-    gdf_buffers = pts.to_crs(3857)
-    gdf_buffers["geometry"] = gdf_buffers.apply(
+    buffers = pts.to_crs(3857)
+    buffers["geometry"] = buffers.apply(
         lambda r: r.geometry.buffer(size_dict[r.id] / 2, cap_style=3), axis=1
     )
-    gdf_buffers = gdf_buffers.to_crs(4326)
-    gdf_buffers.to_file("test_buffer.geojson", driver="GeoJSON")
+    buffers = buffers.to_crs(4326)
 
     # get the disposition in col and line
     nb_col, nb_line = cp.get_dims(len(mosaics))
 
     pdf_tmps = []
     output.reset_progress(len(pts), "Pdf page created")
-    for index, row in gdf_buffers.iterrows():
+    for index, r in buffers.iterrows():
 
-        name = re.sub("[^a-zA-Z\d\-\_]", "_", unidecode(str(row["id"])))
+        name = re.sub("[^a-zA-Z\d\-\_]", "_", unidecode(str(r.id)))
 
         pdf_tmp = cp.tmp_dir / f"{filename}_{name_bands}_tmp_pts_{name}.pdf"
         pdf_tmps.append(pdf_tmp)
@@ -104,7 +102,7 @@ def get_pdf(
         with PdfPages(pdf_tmp) as pdf:
 
             # the centroid is a point so I can safely take the first coords
-            lat, lng = row.geometry.centroid.coords[0]
+            lat, lng = r.geometry.centroid.coords[0]
 
             page_title = f"Id: {name} (lat:{lat:.5f}, lng:{lng:.5f})"
 
@@ -127,7 +125,7 @@ def get_pdf(
                 file = vrt_list[m]
 
                 # extract the buffer bounds
-                bounds = row["geometry"].bounds
+                bounds = r.geometry.bounds
 
                 with rio.open(file) as f:
                     data = f.read(window=from_bounds(*bounds, f.transform))
@@ -173,9 +171,7 @@ def get_pdf(
                 data = np.transpose(data, [1, 2, 0])
 
                 # create the square polygon
-                x_polygon, y_polygon = gdf_squares.loc[index][
-                    "geometry"
-                ].exterior.coords.xy
+                x_polygon, y_polygon = geoms.loc[index]["geometry"].exterior.coords.xy
 
                 place = cp.getPositionPdf(placement_id, nb_col)
                 ax = axes[place[0], place[1]]
@@ -226,9 +222,8 @@ def get_pdf(
     mergedObject.write(str(pdf_file))
 
     # flush the tmp repository
-    for file in cp.tmp_dir.glob("*.*"):
-        file.unlink()
-    # cp.tmp_dir.rmdir() # if I remove the folder I will not be able to relaunch the app without relaunching everything
+    shutil.rmtree(cp.tmp_dir)
+    cp.tmp_dir.mkdir()
 
     output.add_live_msg("PDF output finished", "success")
 
