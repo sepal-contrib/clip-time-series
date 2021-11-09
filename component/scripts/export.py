@@ -48,8 +48,6 @@ def get_pdf(
     geometry,
     output,
 ):
-    # guess if the geometry is an point file or a shape file
-    is_point = all([r.geometry.geom_type == "Point" for _, r in geometry.iterrows()])
 
     # get the filename
     filename = Path(file).stem
@@ -62,14 +60,12 @@ def get_pdf(
 
     # copy geometry to build the point gdf
     pts = geometry.copy()
-    pts.geometry = pts.geometry if is_point else pts.geometry.centroid
+    pts.geometry = pts.geometry.centroid
 
     # build the geometries that will be drawn on the thumbnails
     # can stay in EPSG:3857 as it will be used in this projection
     geoms = geometry.to_crs(3857)
-    geoms.geometry = (
-        geoms.buffer(square_size / 2, cap_style=3) if is_point else geoms.geometry
-    )
+    geoms.geometry = geoms.buffer(square_size / 2, cap_style=3)
 
     # build the dictionary to use to build the images thumbnails
     size_dict = {}

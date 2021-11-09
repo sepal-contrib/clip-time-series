@@ -12,11 +12,11 @@ from component import parameter as cp
 
 STYLE = {
     "stroke": True,
-    "color": "darkblue",
+    "color": color.secondary,
     "weight": 2,
     "opacity": 1,
     "fill": True,
-    "fillColor": "darkblue",
+    "fillColor": color.secondary,
     "fillOpacity": 0.4,
 }
 

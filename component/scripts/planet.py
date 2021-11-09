@@ -153,9 +153,6 @@ def get_mosaics():
 
 def get_planet_vrt(geometry, mosaics, size, file, bands, out):
 
-    # guess if the file is only composed of points
-    is_points = all([r.geometry.geom_type == "Point" for _, r in geometry.iterrows()])
-
     # get the filename
     filename = Path(file).stem
 
