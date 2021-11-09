@@ -29,6 +29,7 @@
         "intro": "Select sources and bands to be displayed",
         "btn": "Validate your bands",
         "sources": "select the sources satellites",
+        "mosaics": "Select mosaics",
         "bands": "select the band to be displayed",
         "points": "Display Point {}: (lat: {:.5f}, lng: {:.5f})",
         "driver": "Select driver: ",
@@ -43,13 +44,12 @@
         "square_size": "Square size",
         "image_size": "Size of the Thumbnails",
         "no_image": "No size is provided for the thumbnails", 
-        "no_start": "Please provide a start year",
-        "no_end": "Please provide a end year",
         "no_square": "Please provide a square size",
-        "wrong_date": "Start year cannot be higher than end year",
+        "no_mosaics": "Please select mosaics to be displayed",
         "no_driver": "No dirver has been provided, please choose between GEE and Planet",
         "no_key": "you are using the planet driver, please provide an API key",
-        "no_semester": "Please proved a semester to display"
+        "no_semester": "Please proved a semester to display",
+        "no_id_list": "Please provide the list of point you want to display"
     },
     "table": {
         "title": "Select a file",
@@ -67,12 +67,12 @@
         "read_columns": "The dropdown have been updated with the header of your file : [{}]",
         "missing_input": "One of the column is unknown",
         "valid_columns": "Your columns have been validated",
-        "reapeated_input": "One of the input have been repeated. Each column must be different",
+        "types": "select types",
         "test": {
             "txt": "By clicking on the following btn you'll download a test dataset of points. This file will be downloaded to your SEPAL `~/downloads` folder.",
             "btn": "Download the test dataset",
             "title": "Download test data File",
-            "msg": "The test dataset have been downloaded. It will be available in the \"{}/{}.csv\" folder of your sepal account."
+            "msg": "The test dataset have been downloaded and automatically loaded. It will be available at \"{}\" in your SEPAL folders."
         },
         "map": {
             "title": "Display points"

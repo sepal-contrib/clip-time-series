@@ -9,17 +9,6 @@ ee.Initialize()
 ##########################
 ##       function       ##
 ##########################
-def getPositionPdf(i):  
+def getPositionPdf(i):
     """Return the position of the square on the pdf page"""
-    return [int(i/5), i%5]
-
-
-
-
-
-        
-
-
-
-
-
+    return [int(i / 5), i % 5]
