@@ -16,6 +16,8 @@ import geopandas as gpd
 
 from component import parameter as cp
 
+from .utils import min_diagonal
+
 ee.Initialize()
 
 
@@ -35,7 +37,15 @@ def is_pdf(file, bands):
 
 
 def get_pdf(
-    file, mosaics, image_size, square_size, vrt_list, title_list, bands, pts, output
+    file,
+    mosaics,
+    image_size,
+    square_size,
+    vrt_list,
+    title_list,
+    bands,
+    geometry,
+    output,
 ):
 
     # get the filename
@@ -47,16 +57,33 @@ def get_pdf(
     # pdf name
     pdf_file = cp.result_dir / f"{filename}_{name_bands}.pdf"
 
-    # create a geopandas of square buffer
-    # they will only be used in 3857 no need to reproject to 4326
-    gdf_squares = pts.to_crs("EPSG:3857")
-    gdf_squares["geometry"] = gdf_squares.buffer(square_size / 2, cap_style=3)
-    # gdf_squares = gdf_squares.to_crs("EPSG:4326")
+    # extract the points as centroid for geometries
+    # build minimal buffer size
+    if all([r.geometry.geom_type == "Point" for _, r in geometry.iterrows()]):
+        pts = geometry.copy()
+        size_dict = {id_: image_size for id_ in geometry.id}
+        gdf_squares = pts.to_crs(3857)  # will be used in this projection
+        gdf_squares["geometry"] = gdf_squares.buffer(square_size / 2, cap_style=3)
 
-    # create a geopandas of thumbnails buffer
-    gdf_buffers = pts.to_crs("EPSG:3857")
-    gdf_buffers["geometry"] = gdf_buffers.buffer(image_size / 2, cap_style=3)
-    gdf_buffers = gdf_buffers.to_crs("EPSG:4326")
+    else:
+        pts = geometry.copy()
+        pts["geometry"] = pts["geometry"].centroid
+        size_dict = {
+            r.id: min_diagonal(r.geometry, image_size)
+            for _, r in geometry.to_crs(3857).iterrows()
+        }
+        gdf_squares = geometry.to_crs(3857)
+
+    gdf_squares.to_file("test_squares.geojson", driver="GeoJSON")
+    pts.to_file("test_pts.geojson", driver="GeoJSON")
+
+    # create the buffer grid
+    gdf_buffers = pts.to_crs(3857)
+    gdf_buffers["geometry"] = gdf_buffers.apply(
+        lambda r: r.geometry.buffer(size_dict[r.id] / 2, cap_style=3), axis=1
+    )
+    gdf_buffers = gdf_buffers.to_crs(4326)
+    gdf_buffers.to_file("test_buffer.geojson", driver="GeoJSON")
 
     # get the disposition in col and line
     nb_col, nb_line = cp.get_dims(len(mosaics))
@@ -76,7 +103,10 @@ def get_pdf(
         # create the resulting pdf
         with PdfPages(pdf_tmp) as pdf:
 
-            page_title = f"Pt_{name} (lat:{row['lat']:.5f}, lng:{row['lng']:.5f})"
+            # the centroid is a point so I can safely take the first coords
+            lat, lng = row.geometry.centroid.coords[0]
+
+            page_title = f"Id: {name} (lat:{lat:.5f}, lng:{lng:.5f})"
 
             fig, axes = plt.subplots(
                 nb_line, nb_col, figsize=(11.69, 8.27), dpi=500, constrained_layout=True
@@ -87,7 +117,6 @@ def get_pdf(
             axes = np.array(axes, dtype=object).reshape(nb_line, nb_col)
 
             fig.suptitle(page_title, fontsize=16, fontweight="bold")
-            # fig.set_tight_layout(True)
 
             # display the images in a fig and export it as a pdf page
             placement_id = 0
@@ -113,7 +142,12 @@ def get_pdf(
                         src_crs=src_crs,
                         dst_crs=dst_crs,
                     )
-                    bounds = warp.transform_bounds(src_crs, dst_crs, *bounds)
+
+                    # extract all the value separately, matplotlib uses
+                    # a different convention
+                    xmin, ymin, xmax, ymax = warp.transform_bounds(
+                        src_crs, dst_crs, *bounds
+                    )
 
                 bands = []
                 for i in range(3):
@@ -145,7 +179,9 @@ def get_pdf(
 
                 place = cp.getPositionPdf(placement_id, nb_col)
                 ax = axes[place[0], place[1]]
-                ax.imshow(data, interpolation="nearest", extent=list(bounds))
+                ax.imshow(
+                    data, interpolation="nearest", extent=[xmin, xmax, ymin, ymax]
+                )
                 ax.plot(
                     x_polygon,
                     y_polygon,

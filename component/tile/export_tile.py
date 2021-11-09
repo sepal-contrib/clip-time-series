@@ -54,7 +54,7 @@ class ExportData(sw.Tile):
 
         # rename variable for the sake of simplified writting
         file = self.tb_model.json_table["pathname"]
-        pts = self.viz_model.pts
+        geometry = self.viz_model.geometry
         bands = self.viz_model.bands
         sources = self.viz_model.sources
         square_size = self.viz_model.square_size
@@ -68,11 +68,11 @@ class ExportData(sw.Tile):
         # create the vrt from gee images
         if self.viz_model.driver == "planet":
             vrt_list, title_list = cs.get_planet_vrt(
-                pts, mosaics, image_size, file, bands, self.alert
+                geometry, mosaics, image_size, file, bands, self.alert
             )
         elif self.viz_model.driver == "gee":
             vrt_list, title_list = cs.get_gee_vrt(
-                pts, mosaics, image_size, file, bands, sources, self.alert
+                geometry, mosaics, image_size, file, bands, sources, self.alert
             )
 
         # export as pdf
@@ -84,7 +84,7 @@ class ExportData(sw.Tile):
             vrt_list,
             title_list,
             bands,
-            pts,
+            geometry,
             self.alert,
         )
 

@@ -10,6 +10,8 @@ from osgeo import gdal
 
 from component import parameter as cp
 
+from .utils import min_diagonal
+
 ee.Initialize()
 
 
@@ -71,16 +73,23 @@ def getImage(sources, bands, mask, year):
     return (clip, satelliteId)
 
 
-def get_gee_vrt(pts, mosaics, square_size, file, bands, sources, output):
+def get_gee_vrt(geometry, mosaics, size, file, bands, sources, output):
 
     # get the filename
     filename = Path(file).stem
 
-    # transform the stored points into ee points
-    ee_pts = [ee.Geometry.Point(row.lng, row.lat) for _, row in pts.iterrows()]
+    # extract the points as centroid for geometries
+    # build minimal buffer size
+    if all([r.geometry.geom_type == "Point" for _, r in geometry.iterrows()]):
+        ee_pts = [ee.Geometry.Point(row.lng, row.lat) for _, row in geometry.iterrows()]
+        size_list = [size for _ in geometry]
 
-    # create the square buffers
-    ee_buffers = [ee_pt.buffer(square_size).bounds() for ee_pt in ee_pts]
+    else:
+        ee_pts = [ee.Geometry.Point(*g.centroid.coords) for g in geometry.geometry]
+        size_list = [min_diagonal(g, size) for g in geometry.to_crs(3857).geometry]
+
+    # create the buffers
+    ee_buffers = [pt.buffer(s / 2).bounds() for pt, s in zip(ee_pts, size_list)]
 
     # extract the bands to use them in names
     name_bands = "_".join(bands.split(", "))

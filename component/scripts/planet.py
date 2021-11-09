@@ -23,6 +23,8 @@ from osgeo import gdal
 from component.message import cm
 from component import parameter as cp
 
+from .utils import min_diagonal
+
 planet = SimpleNamespace()
 
 # parameters
@@ -149,15 +151,31 @@ def get_mosaics():
     return res
 
 
-def get_planet_vrt(pts, mosaics, square_size, file, bands, out):
+def get_planet_vrt(geometry, mosaics, size, file, bands, out):
 
     # get the filename
     filename = Path(file).stem
 
+    # extract the points as centroid for geometries
+    # build minimal buffer size
+    if all([r.geometry.geom_type == "Point" for _, r in geometry.iterrows()]):
+        pts = geometry.copy()
+        size_dict = {id_: size for id_ in geometry.id}
+
+    else:
+        pts = geometry.copy()
+        pts["geometry"] = pts["geometry"].centroid
+        size_dict = {
+            r.id: min_diagonal(r.geometry, size)
+            for _, r in geometry.to_crs(3857).iterrows()
+        }
+
     # create the buffer grid
-    gdf_buffers = pts.to_crs("EPSG:3857")
-    gdf_buffers["geometry"] = gdf_buffers.buffer(square_size / 2, cap_style=3)
-    gdf_buffers = gdf_buffers.to_crs("EPSG:4326")
+    gdf_buffers = pts.to_crs(3857)
+    gdf_buffers["geometry"] = gdf_buffers.apply(
+        lambda r: r.geometry.buffer(size_dict[r.id] / 2, cap_style=3), axis=1
+    )
+    gdf_buffers = gdf_buffers.to_crs(4326)
 
     # find all the quads that should be downloaded and serve them as a grid
     planet_grid = get_planet_grid(gdf_buffers["geometry"], out)

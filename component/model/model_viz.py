@@ -25,4 +25,4 @@ class VizModel(model.Model):
     planet_key = Any(None).tag(sync=True)
 
     # filtered point dataset
-    pts = Any(None).tag(sync=True)
+    geometry = Any(None).tag(sync=True)

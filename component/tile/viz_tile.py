@@ -117,7 +117,7 @@ class InputTile(sw.Tile):
         self.btn.on_event("click", self._display_data)
         self.driver.observe(self._on_driver_change, "v_model")
         self.planet_key.on_event("blur", self._check_key)
-        self.tb_model.observe(self._update_points, "pts")
+        self.tb_model.observe(self._update_points, "raw_geometry")
 
     @su.switch("disabled", "loading", on_widgets=["planet_key", "mosaics"])
     def _check_key(self, widget, event, data):
@@ -148,7 +148,7 @@ class InputTile(sw.Tile):
         id_list = self.viz_model.id_list
         driver = self.viz_model.driver
         file = self.tb_model.json_table["pathname"]
-        pts = self.tb_model.pts
+        pts = self.tb_model.raw_geometry
         bands = self.viz_model.bands
         sources = self.viz_model.sources
         mosaics = self.viz_model.mosaics
@@ -178,13 +178,15 @@ class InputTile(sw.Tile):
             return
 
         # filter the points
-        self.viz_model.pts = self.tb_model.pts.copy()
+        self.viz_model.geometry = self.tb_model.raw_geometry.copy()
         if id_list != [cw.IdSelect.ALL]:
-            self.viz_model.pts = self.viz_model.pts[self.viz_model.pts.id.isin(id_list)]
+            self.viz_model.geometry = self.viz_model.geometry[
+                self.viz_model.geometry.id.isin(id_list)
+            ]
 
         # generate a sum-up of the inputs
         msg = cs.set_msg(
-            self.viz_model.pts,
+            self.viz_model.geometry,
             bands,
             sources,
             Path(file).stem,
@@ -264,6 +266,6 @@ class InputTile(sw.Tile):
             return
 
         # set the items values
-        self.w_id.set_items(self.tb_model.pts.id.tolist())
+        self.w_id.set_items(self.tb_model.raw_geometry.id.tolist())
 
         return self

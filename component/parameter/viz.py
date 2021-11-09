@@ -14,4 +14,4 @@ max_square = 500
 
 # the color and size wich will be used for the display of the polygon
 polygon_color = "yellow"
-polygon_width = 1
+polygon_width = 3
