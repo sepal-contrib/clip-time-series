@@ -84,7 +84,7 @@ The best available image is then selected using the following hierarchy order:
 - landsat 5
 - landsat 7
 
-If the user select :guilabbel:`planet`, the panel will ask for the Planet API key.
+If the user select :guilabel:`planet`, the panel will ask for the Planet API key.
 
 points
 ******
@@ -95,6 +95,7 @@ bands
 *****
 
 multiple band combination can be selected:
+
 -   Using the :code:`gee` driver:
 
     -   Red, Green, Blue
@@ -104,7 +105,7 @@ multiple band combination can be selected:
     -   Swir2, Swir1, Red
     -   Swir2, Nir, Green
     
--   Using the :code:`planet`driver:
+-   Using the :code:`planet` driver:
 
     -   rgb
     -   cir
@@ -136,7 +137,7 @@ Select a thumbnail size. This will be the minimal size of the thumbnail used. If
 
 .. danger::
 
-    if the final outter square of a shape is bigger than 10000x10000km, gee and planet will refuse to export your data. Remember that this module is not meant to export national time series but thumbnails.
+    if the final outter square of a shape is bigger than **10000x10000km**, gee and planet will refuse to export your data. Remember that this module is not meant to export national time series but thumbnails.
 
 square size
 ***********
@@ -161,7 +162,7 @@ Only one single button here. Click on it and the downloading of your images will
 
 .. danger::
 
-    The build of the :code:`.pdf` file can consume lots of computation resources and in particular RAM. if you're module freezes more than 2-3 minutes you certainely ran out of memory and the Python kernel have died. Restart the process with a bigger instance.
+    The build of the :code:`.pdf` file can consume lots of computation resources and in particular RAM. if you're module freezes more than 2-3 minutes you certainly ran out of memory and the Python kernel have died. Restart the process with a bigger instance.
     
 .. image:: https://raw.githubusercontent.com/openforis/clip-time-series/master/doc/img/process_loading.png
     :alt: process_loading
