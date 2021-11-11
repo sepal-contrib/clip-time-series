@@ -32,13 +32,18 @@ Select the file by clicking :guilabel:`Table file`. Only the matching file type 
 
 One a file is selected, the widget will try to autopopulate the id, latitude and longitude columns. If columns are wrongly set of if data are missing the user need to select one of the file column to completely describe the points (x, y, id).
 
-.. image:: https://raw.githubusercontent.com/openforis/clip-time-series/master/doc/img/input_table.png
+.. thumbnail:: https://raw.githubusercontent.com/openforis/clip-time-series/master/doc/img/input_table.png
     :alt: input table
+    :title: input selector using a table dataset
+    :group: clip-time-serie
     
 Click on :guilabel:`load your pts file` to load the points as a geodataframe in the app model and display them on a map. 
 The points will be represented as marker clusters and the map will automatically zoom on them. click on any cluster to zoom in. 
 
-.. image:: https://raw.githubusercontent.com/openforis/clip-time-series/master/doc/img/map_table.png
+.. thumbnail:: https://raw.githubusercontent.com/openforis/clip-time-series/master/doc/img/map_table.png
+    :alt: map table
+    :title: input map after selecting the default point file
+    :group: clip-time-serie
 
 .. tip::
 
@@ -57,13 +62,17 @@ The Id column will be used to name the points in the final pdf. Select it in the
 
     if you use names for `id` make sure that they are all unique. 
 
-.. image:: https://raw.githubusercontent.com/openforis/clip-time-series/master/doc/img/input_shape.png
+.. thumbnail:: https://raw.githubusercontent.com/openforis/clip-time-series/master/doc/img/input_shape.png
     :alt: input_shape
+    :title: input selector using a shapefile dataset. "Name" have been selected as Id column.
+    :group: clip-time-serie
 
 Click on :guilabel:`load your pts file` to load the shapes as a geodataframe in the app model and display them on a map. The map will be updated with the selected shapes and zoom on the area of interes.
 
-.. image:: https://raw.githubusercontent.com/openforis/clip-time-series/master/doc/img/map_shape.png
+.. thumbnail:: https://raw.githubusercontent.com/openforis/clip-time-series/master/doc/img/map_shape.png
     :alt: map_shape
+    :title: input map after selecting a shapefile dataset.
+    :group: clip-time-serie
 
 Select time serie parameters
 ----------------------------
@@ -150,8 +159,10 @@ If the used dataset is shapefile then the square will be replace by the shape ge
 
 When you click on the validation button, the module gives you a sum up of the download your about to perform. It's a warning step to avoid the download of huge number of points on wrongly defined parameters. 
 
-.. image:: https://raw.githubusercontent.com/openforis/clip-time-series/master/doc/img/viz_gee.png
+.. thumbnail:: https://raw.githubusercontent.com/openforis/clip-time-series/master/doc/img/viz_gee.png
     :alt: viz
+    :group: clip-time-series
+    :title: An example set of parameter to create a pdf file. Data sum-up can be found in the Orange rectangle.
 
 
 
@@ -164,8 +175,10 @@ Only one single button here. Click on it and the downloading of your images will
 
     The build of the :code:`.pdf` file can consume lots of computation resources and in particular RAM. if you're module freezes more than 2-3 minutes you certainly ran out of memory and the Python kernel have died. Restart the process with a bigger instance.
     
-.. image:: https://raw.githubusercontent.com/openforis/clip-time-series/master/doc/img/process_loading.png
+.. thumbnail:: https://raw.githubusercontent.com/openforis/clip-time-series/master/doc/img/process_loading.png
     :alt: process_loading
+    :group: clip-time-series
+    :title: the progress bar of a downloading process
 
 .. note:: 
 
@@ -173,14 +186,20 @@ Only one single button here. Click on it and the downloading of your images will
 
 Then the module will give you a clickable link in the green button and a preview of the first page of the :code:`pdf`
 
-.. image:: https://raw.githubusercontent.com/openforis/clip-time-series/master/doc/img/output_shape_planet.png
+.. thumbnail:: https://raw.githubusercontent.com/openforis/clip-time-series/master/doc/img/output_shape_planet.png
     :alt: results
     :width: 49%
+    :group: clip-time-series
+    :title: the output preview of a shape input using planet mosaics
     
-.. image:: https://raw.githubusercontent.com/openforis/clip-time-series/master/doc/img/output_table_planet.png
+.. thumbnail:: https://raw.githubusercontent.com/openforis/clip-time-series/master/doc/img/output_table_planet.png
     :alt: results
     :width: 49%
+    :group: clip-time-series
+    :title: the output preview of a table input using planet mosaics
     
-.. image:: https://raw.githubusercontent.com/openforis/clip-time-series/master/doc/img/output_table_landsat.png
+.. thumbnail:: https://raw.githubusercontent.com/openforis/clip-time-series/master/doc/img/output_table_landsat.png
     :alt: results
+    :group: clip-time-series
     :width: 49%
+    :title: the output preview of a table input using landsat mosaics
