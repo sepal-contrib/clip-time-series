@@ -5,8 +5,8 @@
 
 ## About 
 
-This module allows the user to download as a .pdf an auto generated time series from 2005 to 2020. 
-Each year will be represented in a square of 2x2km around the point of interest using the band combination selected by the user. 
+This module allows the user to download as a `.pdf` an auto generated time series from customizable dates. 
+Each mosaic will be represented in a square of custom size from 500x500m to 1000x10000km around the point of interest using the band combination selected by the user.  
 
 The input can be a table file discribing points or a shapefile using geometries. 
 

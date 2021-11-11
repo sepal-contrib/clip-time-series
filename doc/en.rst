@@ -1,72 +1,163 @@
 Clip time series
 ================
 
-This documentation should explain every step to execute the module. If any question or bug remains, please consider post it on the `bug report page <https://github.com/openforis/clip-time-series/issues/new>`_.
+.. tip::
 
-Before starting 
----------------
+    This documentation should explain every step to execute the module. If any question or bug remains, please consider post it on the `bug report page <https://github.com/openforis/clip-time-series/issues/new>`_.
 
-This module will require the user to register to GEE instead of using the public SEPAL account. Follow this `link <https://earthengine.google.com>`_ to create a GEE account. Once done, select your GEE account in the SEPAL bottom right corner and use your personal credentials. 
-
-.. figure:: https://raw.githubusercontent.com/openforis/clip-time-series/master/doc/img/gee_account.png
-    :alt: gee_account
-
-Then go to your terminal, start a `t1` session and run:  
-
-.. code-block:: console
-    
-    earthengine authenticate
-
-Follow the instructions provided by the command. You are now ready to go.
-
-.. warning::
-
-    **Troubleshooting:** This module is executed through a :code:`voila` application that create a User Interface on top of a Jupyter notebook. The reactivity of some components will thus be a little slower than what you are used to on a standard website. Please be nice with them.
+This module allows the user to download as a :code:`.pdf` an auto generated time series from customizable dates. 
+Each mosaic will be represented in a square of custom size from 500x500m to 1000x10000km around the point of interest using the band combination selected by the user. 
 
 
 Select file 
 -----------
 
-First the user need to select a file in the available .txt of its sepal env using the dropdown of the first tile. The Alert will display the identified columns name and update the following dropdowns.
+First the user needs to select a file. This file will be the main input of the module and each page of the final pdf will match a geometry of the input. The user can use 2 types of input: 
 
-.. figure:: https://raw.githubusercontent.com/openforis/clip-time-series/master/doc/img/select_file.png
-    :alt: select_file
+-   Table file (:code:`.csv`, :code:`.txt`) containing at least coordinates and ID columns
+-   Shapes `:code:`.geojson`, :code:`.shp`, :code:`.geopackage`) with at least geometry and Id column
 
-In the following tile You'll be asked to select the X (longitude) and the Y (latitude) column name in your file. The Id column will be used to name the points in the final pdf
+Table
+*****
 
-> if you use names for `id` make sure that they are all differents. 
+Selet the :guilabel:`point`radio button.
 
-.. figure:: https://raw.githubusercontent.com/openforis/clip-time-series/master/doc/img/select_columns.png
-    :alt: selct_columns
+The table file can be :code:`.csv` or :code:`.txt`. It needs to have at least 3 columns including the latitude coordinates, the longitude coordinates and an Id. the name of the columns can be anything. 
 
-The map will be updated with the selected points
+.. warning::
 
-.. figure:: https://raw.githubusercontent.com/openforis/clip-time-series/master/doc/img/map.png
-    :alt: map
+    The table coordinates need to remain unprojected, i.e. in EPSG:4326
+    
+Select the file by clicking :guilabel:`Table file`. Only the matching file type will be displayed. User can navigate through its SEPAL folders to find the appropriate table. 
+
+One a file is selected, the widget will try to autopopulate the id, latitude and longitude columns. If columns are wrongly set of if data are missing the user need to select one of the file column to completely describe the points (x, y, id).
+
+.. image:: https://raw.githubusercontent.com/openforis/clip-time-series/master/doc/img/input_table.png
+    :alt: input table
+    
+Click on :guilabel:`load your pts file` to load the points as a geodataframe in the app model and display them on a map. 
+The points will be represented as marker clusters and the map will automatically zoom on them. click on any cluster to zoom in. 
+
+.. image:: https://raw.githubusercontent.com/openforis/clip-time-series/master/doc/img/map_table.png
+
+.. tips::
+
+    Click on :guilabel:`download test dataset` will automatically download and validate a set of point in the app. Use it to discover the module functionalities.
+    
+Shape
+*****
+
+Selet the :guilabel:`shape`radio button.
+
+The table file can be any file type digested by the :code:`fiona`librairy. The file need to have at least 1 column to describe the Id.
+
+The Id column will be used to name the points in the final pdf. Select it in the updated dropdown menu "Id column". 
+
+> if you use names for `id` make sure that they are all unique. 
+
+.. image:: https://raw.githubusercontent.com/openforis/clip-time-series/master/doc/img/input_shape.png
+    :alt: input_shape
+
+Click on :guilabel:`load your pts file` to load the shapes as a geodataframe in the app model and display them on a map. The map will be updated with the selected shapes and zoom on the area of interes.
+
+.. image:: https://raw.githubusercontent.com/openforis/clip-time-series/master/doc/img/map_shape.png
+    :alt: map_shape
 
 Select time serie parameters
 ----------------------------
 
-In this second step, the user is asked to select the band combination he wants to display as well as the satelites he wants to use. 
+In this second step, the user is asked to select the parameters of its time series.
 
-When you click on the validation button, the module gives you a sum up of the download your about to perform. It's a warning step to avoid the download of huge number of points. 
+drivers
+*******
 
-> If you only select sentinel, no images will be available before 2012. 
+2 drivers are availabel in this module. You can select either a GEE based computation (images will be retreived from GEE) or planet (images will be retreived from planet servers using the user API key). 
 
-.. figure:: https://raw.githubusercontent.com/openforis/clip-time-series/master/doc/img/select_parameters.png
-    :alt: select_parameters
+If the user selects :guilabel:`gee`, the panel will ask you to select the satellites you want to use for the thumbnails. you can select any satellites imagery from landsat family and Sentinel program. 
+
+The best available image is then selected using the following hierarchy order: 
+
+- Sentinel 2
+- Landsat 8
+- landsat 5
+- landsat 7
+
+If the user select :guilabbel:`planet`, the panel will ask for the Planet API key.
+
+points
+******
+
+The number of points a user wants to display can vary. If the user select all then all the available points in the provided file will be used. It's also possible to select a subset of them using there **id** names. 
+
+bands
+*****
+
+multiple band combination can be selected:
+-   Using the :code:`gee` driver: 
+    -   Red, Green, Blue
+    -   Nir, Red, Green
+    -   Nir, Swir1, Red 
+    -   Swir2, Nir, Red 
+    -   Swir2, Swir1, Red
+    -   Swir2, Nir, Green
+-   Using the :code:`planet`driver:
+    -   rgb
+    -   cir
+
+mosaics
+*******
+
+Each selected mosaics will be represented by a thumbnail in the final :code:`pdf`. 
+
+.. warning::
+
+    User can select as many mosaics as he wants but note:
+    -   The page will remain in A4 format so the thumbnails will become smaller and smaller proportionnaly to the number of mosaics.
+    -   Each image needs to be downloaded to SEPAL so many images => longer compuation time
+    
+-   Using the :code:`gee` driver, mosaics are yearly cloudless mosaics build on the best found satellites as described in the previous section.
+-   Using the :code:`planet`driver, 3 types of mosaics can be selected (and mixed together):
+    -   NICFI bianual mosaics
+    -   NICFI monthly mosaics
+    -   Other (any other mosaics associated to the user API key)
+
+thumbnails
+**********
+
+Select a thumbnail size. This will be the minimal size of the thumbnail used. If the shape defined in the first panel is bigger then the software will try to fint he smallest square around the shape centered on the centroid of the shape.
+
+.. danger::
+
+    if the final outter square of a shape is bigger than 10000x10000km, gee and planet will refuse to export your data. Remember that this module is not meant to export national time series but thumbnails.
+
+square size
+***********
+
+In the middle of the final image, the software will display a small square to visually represent the point. The use can select the size of this square depending on the size of its thumbnails. 
+
+If the used dataset is shapefile then the square will be replace by the shape geometry.
+
+
+
+When you click on the validation button, the module gives you a sum up of the download your about to perform. It's a warning step to avoid the download of huge number of points on wrongly defined parameters. 
+
+.. image:: https://raw.githubusercontent.com/openforis/clip-time-series/master/doc/img/viz_gee.png
+    :alt: viz
+
+
 
 Export data
 -----------
 
 Only one single button here. 
-Click on it and the downloading of your images will be send to earthengine. 
+Click on it and the downloading of your images will be send to earthengine or planet.
 
-When the alert start to display "STATUS: RUNNING" it means that all the orders have been send to GEE. Then you can close your sepal page and wait for the process to complete in the `earthengine code editor task list <https://code.earthengine.google.com/#>`_. When all the images are downloaded, yuo can start the module again, use the same parameters and the module will retrieve them from your gdrive. 
+.. danger::
 
-.. danger:: 
-
-    If you go back to the module BEFORE the end of the downloading, the module will restart the order all over again
+    The build of the :code:`.pdf` file can consume lots of computation resources and in particular RAM. if you're module freezes more than 2-3 minutes you certainely ran out of memory and the Python kernel have died. Restart the process with a bigger instance.
+    
+.. image:: https://raw.githubusercontent.com/openforis/clip-time-series/master/doc/img/process_loading.png
+    :alt: process_loading
 
 .. note:: 
 
@@ -74,5 +165,14 @@ When the alert start to display "STATUS: RUNNING" it means that all the orders h
 
 Then the module will give you a clickable link in the green button and a preview of the first page of the pdf
 
-.. figure:: https://raw.githubusercontent.com/openforis/clip-time-series/master/doc/img/results.png
+.. image:: https://raw.githubusercontent.com/openforis/clip-time-series/master/doc/img/output_shape_planet.png
     :alt: results
+    :width: 49%
+    
+.. image:: https://raw.githubusercontent.com/openforis/clip-time-series/master/doc/img/output_table_planet.png
+    :alt: results
+    :width: 49%
+    
+.. image:: https://raw.githubusercontent.com/openforis/clip-time-series/master/doc/img/output_table_landsat.png
+    :alt: results
+    :width: 49%
