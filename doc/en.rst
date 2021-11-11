@@ -6,21 +6,21 @@ Clip time series
     This documentation should explain every step to execute the module. If any question or bug remains, please consider post it on the `bug report page <https://github.com/openforis/clip-time-series/issues/new>`_.
 
 This module allows the user to download as a :code:`.pdf` an auto generated time series from customizable dates. 
-Each mosaic will be represented in a square of custom size from 500x500m to 1000x10000km around the point of interest using the band combination selected by the user. 
+Each mosaic will be represented in a square of custom size from **500x500m** to **1000x10000km** around the point of interest using the band combination selected by the user. 
 
 
 Select file 
 -----------
 
-First the user needs to select a file. This file will be the main input of the module and each page of the final pdf will match a geometry of the input. The user can use 2 types of input: 
+First the user needs to select a file. This file will be the main input of the module and each page of the final :code:`.pdf` will match a geometry of the input. The user can use 2 types of input: 
 
 -   Table file (:code:`.csv`, :code:`.txt`) containing at least coordinates and ID columns
--   Shapes `:code:`.geojson`, :code:`.shp`, :code:`.geopackage`) with at least geometry and Id column
+-   Shapes (:code:`.geojson`, :code:`.shp`, :code:`.geopackage`) with at least geometry and Id column
 
 Table
 *****
 
-Selet the :guilabel:`point`radio button.
+Select the :guilabel:`point` radio button.
 
 The table file can be :code:`.csv` or :code:`.txt`. It needs to have at least 3 columns including the latitude coordinates, the longitude coordinates and an Id. the name of the columns can be anything. 
 
@@ -40,20 +40,22 @@ The points will be represented as marker clusters and the map will automatically
 
 .. image:: https://raw.githubusercontent.com/openforis/clip-time-series/master/doc/img/map_table.png
 
-.. tips::
+.. tip::
 
-    Click on :guilabel:`download test dataset` will automatically download and validate a set of point in the app. Use it to discover the module functionalities.
+    Click on :guilabel:` download test dataset` will automatically download and validate a set of point in the app. Use it to discover the module functionalities.
     
 Shape
 *****
 
-Selet the :guilabel:`shape`radio button.
+Select the :guilabel:`shape` radio button.
 
-The table file can be any file type digested by the :code:`fiona`librairy. The file need to have at least 1 column to describe the Id.
+The table file can be any file type digested by the :code:`fiona` librairy. The file need to have at least 1 column to describe the Id.
 
 The Id column will be used to name the points in the final pdf. Select it in the updated dropdown menu "Id column". 
 
-> if you use names for `id` make sure that they are all unique. 
+.. warning::
+
+    if you use names for `id` make sure that they are all unique. 
 
 .. image:: https://raw.githubusercontent.com/openforis/clip-time-series/master/doc/img/input_shape.png
     :alt: input_shape
@@ -71,7 +73,7 @@ In this second step, the user is asked to select the parameters of its time seri
 drivers
 *******
 
-2 drivers are availabel in this module. You can select either a GEE based computation (images will be retreived from GEE) or planet (images will be retreived from planet servers using the user API key). 
+2 drivers are available in this module. You can select either a GEE based computation (images will be retreived from GEE) or planet (images will be retreived from planet servers using the user API key). 
 
 If the user selects :guilabel:`gee`, the panel will ask you to select the satellites you want to use for the thumbnails. you can select any satellites imagery from landsat family and Sentinel program. 
 
@@ -93,14 +95,17 @@ bands
 *****
 
 multiple band combination can be selected:
--   Using the :code:`gee` driver: 
+-   Using the :code:`gee` driver:
+
     -   Red, Green, Blue
     -   Nir, Red, Green
     -   Nir, Swir1, Red 
     -   Swir2, Nir, Red 
     -   Swir2, Swir1, Red
     -   Swir2, Nir, Green
+    
 -   Using the :code:`planet`driver:
+
     -   rgb
     -   cir
 
@@ -112,14 +117,17 @@ Each selected mosaics will be represented by a thumbnail in the final :code:`pdf
 .. warning::
 
     User can select as many mosaics as he wants but note:
+    
     -   The page will remain in A4 format so the thumbnails will become smaller and smaller proportionnaly to the number of mosaics.
     -   Each image needs to be downloaded to SEPAL so many images => longer compuation time
     
--   Using the :code:`gee` driver, mosaics are yearly cloudless mosaics build on the best found satellites as described in the previous section.
--   Using the :code:`planet`driver, 3 types of mosaics can be selected (and mixed together):
-    -   NICFI bianual mosaics
-    -   NICFI monthly mosaics
-    -   Other (any other mosaics associated to the user API key)
+Using the :code:`gee` driver, mosaics are yearly cloudless mosaics build on the best found satellites as described in the previous section.
+
+Using the :code:`planet`driver, 3 types of mosaics can be selected (and mixed together):
+
+-   NICFI bianual mosaics
+-   NICFI monthly mosaics
+-   Other (any other mosaics associated to the user API key)
 
 thumbnails
 **********
@@ -133,7 +141,7 @@ Select a thumbnail size. This will be the minimal size of the thumbnail used. If
 square size
 ***********
 
-In the middle of the final image, the software will display a small square to visually represent the point. The use can select the size of this square depending on the size of its thumbnails. 
+In the middle of the final image, the software will display a small square to visually represent the point. User can select the size of this square depending on the size of its thumbnails. 
 
 If the used dataset is shapefile then the square will be replace by the shape geometry.
 
@@ -149,8 +157,7 @@ When you click on the validation button, the module gives you a sum up of the do
 Export data
 -----------
 
-Only one single button here. 
-Click on it and the downloading of your images will be send to earthengine or planet.
+Only one single button here. Click on it and the downloading of your images will be send to earthengine or planet.
 
 .. danger::
 
@@ -163,7 +170,7 @@ Click on it and the downloading of your images will be send to earthengine or pl
 
     The images will be removed from your gdrive after the creation of the pdf to save space
 
-Then the module will give you a clickable link in the green button and a preview of the first page of the pdf
+Then the module will give you a clickable link in the green button and a preview of the first page of the :code:`pdf`
 
 .. image:: https://raw.githubusercontent.com/openforis/clip-time-series/master/doc/img/output_shape_planet.png
     :alt: results
