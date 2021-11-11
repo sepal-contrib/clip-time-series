@@ -143,7 +143,7 @@ class FileTile(sw.Tile):
 
         elif self.model.types == cp.types[1]:  # vector
 
-            gdf = gdp.read_file(file)
+            gdf = gdp.read_file(file).to_crs(4326)
             gdf = gdf.filter([id_, "geometry"])
             gdf = gdf.rename(columns={id_: "id"})
 
