@@ -1,7 +1,7 @@
 import json
 
 import pandas as pd
-import geopandas as gdp
+import geopandas as gpd
 import ipyvuetify as v
 
 from sepal_ui import sepalwidgets as sw
@@ -94,6 +94,8 @@ class FileTile(sw.Tile):
         # js behaviour
         self.btn.on_event("click", self._load_file)
         self.w_file_type.observe(self._change_type, "v_model")
+        self.vector_select.w_column.observe(self._test_unique, "v_model")
+        self.table_select.IdSelect.observe(self._test_unique, "v_model")
 
     def _change_type(self, change):
 
@@ -137,13 +139,13 @@ class FileTile(sw.Tile):
             df = pd.read_csv(file, sep=None, engine="python")
             df = df.filter(items=[lat, lng, id_])
             df = df.rename(columns={lat: "lat", lng: "lng", id_: "id"})
-            gdf = gdp.GeoDataFrame(
-                df, geometry=gdp.points_from_xy(df.lng, df.lat), crs="EPSG:4326"
+            gdf = gpd.GeoDataFrame(
+                df, geometry=gpd.points_from_xy(df.lng, df.lat), crs="EPSG:4326"
             )
 
         elif self.model.types == cp.types[1]:  # vector
 
-            gdf = gdp.read_file(file)
+            gdf = gpd.read_file(file).to_crs(4326)
             gdf = gdf.filter([id_, "geometry"])
             gdf = gdf.rename(columns={id_: "id"})
 
@@ -154,6 +156,36 @@ class FileTile(sw.Tile):
         cs.setMap(self.model, self.m)
 
         self.alert.add_msg(cm.table.valid_columns, "success")
+
+        return
+
+    def _test_unique(self, change):
+        """
+        Check that the chosen column for the id has only unique value
+        if that's not the case empty the v_model and display error message
+        """
+
+        # exit if no new value
+        if not change["new"]:
+            return
+
+        # assign the widget to a variable for reading convinience
+        widget = change["owner"]
+
+        # reset the error message
+        widget.error_messages = None
+        widget.error = False
+
+        # read the file as a pandas dataframe
+        df = gpd.read_file(self.model.json_table["pathname"], ignore_geometry=True)
+
+        # check the id column
+        # empty it if it's wrong
+        # display an error message
+        if df[change["new"]].duplicated().sum():
+            widget.error_messages = [cm.table.duplicated]
+            widget.error = True
+            widget.v_model = None
 
         return
 

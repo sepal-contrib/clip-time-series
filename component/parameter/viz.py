@@ -13,5 +13,14 @@ min_square = 10
 max_square = 500
 
 # the color and size wich will be used for the display of the polygon
-polygon_color = "yellow"
+polygon_colors = {
+    "Red, Green, Blue": "blue",
+    "Nir, Red, Green": "yellow",
+    "Nir, Swir1, Red": "yellow",
+    "Swir2, Nir, Red": "yellow",
+    "Swir2, Swir1, Red": "yellow",
+    "Swir2, Nir, Green": "yellow",
+    "rgb": "blue",
+    "cir": "yellow",
+}
 polygon_width = 2

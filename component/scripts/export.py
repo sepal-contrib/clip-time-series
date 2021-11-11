@@ -44,7 +44,7 @@ def get_pdf(
     square_size,
     vrt_list,
     title_list,
-    bands,
+    band_combo,
     geometry,
     output,
 ):
@@ -53,7 +53,7 @@ def get_pdf(
     filename = Path(file).stem
 
     # extract the bands to use them in names
-    name_bands = "_".join(bands.split(", "))
+    name_bands = "_".join(band_combo.split(", "))
 
     # pdf name
     pdf_file = cp.result_dir / f"{filename}_{name_bands}.pdf"
@@ -174,10 +174,11 @@ def get_pdf(
                 ax.imshow(
                     data, interpolation="nearest", extent=[xmin, xmax, ymin, ymax]
                 )
+
                 ax.plot(
                     x_polygon,
                     y_polygon,
-                    color=cp.polygon_color,
+                    color=cp.polygon_colors[band_combo],
                     linewidth=cp.polygon_width,
                 )
                 ax.set_title(
