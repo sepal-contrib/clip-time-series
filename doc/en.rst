@@ -133,7 +133,7 @@ Each selected mosaics will be represented by a thumbnail in the final :code:`pdf
     
 Using the :code:`gee` driver, mosaics are yearly cloudless mosaics build on the best found satellites as described in the previous section.
 
-Using the :code:`planet`driver, 3 types of mosaics can be selected (and mixed together):
+Using the :code:`planet` driver, 3 types of mosaics can be selected (and mixed together):
 
 -   NICFI bianual mosaics
 -   NICFI monthly mosaics
