@@ -183,6 +183,7 @@ class InputTile(sw.Tile):
             self.viz_model.geometry = self.viz_model.geometry[
                 self.viz_model.geometry.id.isin(id_list)
             ]
+            self.viz_model.geometry = self.viz_model.geometry.reset_index(drop=True)
 
         # generate a sum-up of the inputs
         msg = cs.set_msg(
