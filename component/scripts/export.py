@@ -182,8 +182,6 @@ def get_pdf(
                     linewidth=cp.polygon_width,
                 )
 
-                print(f"m={m}")
-                print(f"index={index}")
                 ax.set_title(
                     title_list[m][index],
                     x=0.0,
