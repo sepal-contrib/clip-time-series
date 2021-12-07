@@ -28,7 +28,7 @@ def setMap(model, m):
 
     # empty the map
     for l in m.layers:
-        if l.name != "CartoDB.DarkMatter":
+        if l.name != cp.basemap:
             m.remove_layer(l)
 
     # add markers in case of points
