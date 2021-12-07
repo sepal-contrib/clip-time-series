@@ -4,8 +4,10 @@ import shutil
 
 import pandas as pd
 import geemap
-from ipyleaflet import GeoJSON, MarkerCluster, Marker, AwesomeIcon
+from ipyleaflet import GeoJSON, MarkerCluster, AwesomeIcon, Marker, Popup
 from sepal_ui import color
+from sepal_ui import sepalwidgets as sw
+from ipywidgets import HTML
 
 from component.message import cm
 from component import parameter as cp
@@ -37,7 +39,11 @@ def setMap(model, m):
         # add the pts on the map
         markers = []
         for index, row in model.raw_geometry.iterrows():
-            marker = Marker(icon=ICON, location=(row.lat, row.lng), draggable=False)
+
+            msg = HTML(value=f"id: {row.id}")
+            marker = Marker(
+                icon=ICON, popup=msg, location=(row.lat, row.lng), draggable=False
+            )
             markers.append(marker)
 
         # display on the map
