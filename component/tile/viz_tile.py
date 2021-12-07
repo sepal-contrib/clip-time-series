@@ -6,6 +6,7 @@ import time
 from sepal_ui import sepalwidgets as sw
 from sepal_ui.scripts import utils as su
 import ipyvuetify as v
+from natsort import natsorted
 
 from component.message import cm
 from component import parameter as cp
@@ -267,6 +268,6 @@ class InputTile(sw.Tile):
             return
 
         # set the items values
-        self.w_id.set_items(self.tb_model.raw_geometry.id.tolist())
+        self.w_id.set_items(natsorted(self.tb_model.raw_geometry.id.tolist()))
 
         return self
