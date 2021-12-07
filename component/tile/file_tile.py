@@ -194,6 +194,6 @@ class MapTile(sw.Tile):
     def __init__(self):
 
         # create the widgets
-        self.map = sm.SepalMap()
+        self.map = sm.SepalMap([cp.basemap])
 
         super().__init__(id_="file_widget", title=cm.table.map.title, inputs=[self.map])
