@@ -124,8 +124,13 @@ class InputTile(sw.Tile):
     @su.switch("loading", on_widgets=["mosaics"])
     def _reorder_mosaics(self, widget, event, data):
 
+        # remove the header from the items-list
+        items_no_header = [i for i in self.mosaics.items if "header" not in i]
+
         # pick back the items from the items list
-        order_list = [i for i in self.mosaics.items if i in self.mosaics.v_model]
+        order_list = [
+            i["value"] for i in items_no_header if i["value"] in self.mosaics.v_model
+        ]
         order_list.reverse()
 
         self.mosaics.v_model = order_list
@@ -257,7 +262,8 @@ class InputTile(sw.Tile):
 
             # adapt dates to available data
             self.mosaics.items = [
-                y for y in range(cp.gee_max_end_year, cp.gee_min_start_year - 1, -1)
+                {"text": y, "value": y}
+                for y in range(cp.gee_max_end_year, cp.gee_min_start_year - 1, -1)
             ]
             self.mosaics.v_model = []
 

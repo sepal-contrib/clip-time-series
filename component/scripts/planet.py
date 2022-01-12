@@ -141,12 +141,12 @@ def get_mosaics():
             monthly.append({"text": short, "value": name})
 
     # fill the results with the found mosaics
-    if len(bianual):
-        res += [{"header": "NICFI bianual"}] + bianual
-    if len(monthly):
-        res += [{"header": "NICFI monthly"}] + monthly
     if len(other):
         res += [{"header": "other"}] + other
+    if len(monthly):
+        res += [{"header": "NICFI monthly"}] + monthly
+    if len(bianual):
+        res += [{"header": "NICFI bianual"}] + bianual
 
     return res
 
