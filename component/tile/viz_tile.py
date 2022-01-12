@@ -115,10 +115,22 @@ class InputTile(sw.Tile):
         self._on_driver_change(None)
 
         # js behaviour
+        self.mosaics.on_event("blur", self._reorder_mosaics)
         self.btn.on_event("click", self._display_data)
         self.driver.observe(self._on_driver_change, "v_model")
         self.planet_key.on_event("blur", self._check_key)
         self.tb_model.observe(self._update_points, "raw_geometry")
+
+    @su.switch("loading", on_widgets=["mosaics"])
+    def _reorder_mosaics(self, widget, event, data):
+
+        # pick back the items from the items list
+        order_list = [i for i in self.mosaics.items if i in self.mosaics.v_model]
+        order_list.reverse()
+
+        self.mosaics.v_model = order_list
+
+        return self
 
     @su.switch("disabled", "loading", on_widgets=["planet_key", "mosaics"])
     def _check_key(self, widget, event, data):
