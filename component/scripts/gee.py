@@ -9,6 +9,7 @@ import ee
 from osgeo import gdal
 
 from component import parameter as cp
+from component.message import cm
 
 from .utils import min_diagonal
 
@@ -140,7 +141,12 @@ def get_gee_vrt(geometry, mosaics, size, file, bands, sources, output):
 
         # build the vrt
         ds = gdal.BuildVRT(str(vrt_path), filepaths)
-        ds.FlushCache()
+
+        # if there is no cahe to empty it means that one of the dataset was empty
+        try:
+            ds.FlushCache()
+        except AttributeError:
+            raise Exception(cm.export.empty_dataset)
 
         # check that the file was effectively created (gdal doesn't raise errors)
         if not vrt_path.is_file():
