@@ -6,7 +6,8 @@ import ee
 ee.Initialize()
 
 # data parameters
-gee_min_start_year = 1985  # launch of landsat 5
+gee_min_landsat_year = 1985  # launch of landsat 5
+gee_min_sentinel_year = 2015  # launch of sentinel 2
 gee_max_end_year = datetime.datetime.now().year
 sources = ["landsat", "sentinel"]
 

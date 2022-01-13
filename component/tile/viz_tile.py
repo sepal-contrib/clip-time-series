@@ -116,6 +116,7 @@ class InputTile(sw.Tile):
 
         # js behaviour
         self.mosaics.on_event("blur", self._reorder_mosaics)
+        self.sources.observe(self._update_dates, "v_model")
         self.btn.on_event("click", self._display_data)
         self.driver.observe(self._on_driver_change, "v_model")
         self.planet_key.on_event("blur", self._check_key)
@@ -222,6 +223,34 @@ class InputTile(sw.Tile):
 
         return
 
+    @su.switch("loading", on_widgets=["mosaics"])
+    def _update_dates(self, change):
+        """update the available mosaics for the gee driver"""
+
+        print("I'm here")
+
+        # exit if the driver is not GEE or empty sources
+        if self.driver.v_model != "gee" or self.sources.v_model == []:
+            return
+
+        print("That worth the shot")
+
+        # get the starting date
+        start = None
+        end = cp.gee_max_end_year
+        if "sentinel" in self.sources.v_model:
+            start = cp.gee_min_sentinel_year
+
+        if "landsat" in self.sources.v_model:
+            start = cp.gee_min_landsat_year
+
+        self.mosaics.items = [
+            {"text": y, "value": y} for y in range(end, start - 1, -1)
+        ]
+        self.mosaics.v_model = []
+
+        return self
+
     def _on_driver_change(self, change):
         """adapt the inputs to the requested sources"""
 
@@ -261,11 +290,7 @@ class InputTile(sw.Tile):
             self.bands.v_model = [*cp.getAvailableBands()][0]
 
             # adapt dates to available data
-            self.mosaics.items = [
-                {"text": y, "value": y}
-                for y in range(cp.gee_max_end_year, cp.gee_min_start_year - 1, -1)
-            ]
-            self.mosaics.v_model = []
+            self._update_dates(None)
 
         return
 
