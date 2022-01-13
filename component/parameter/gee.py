@@ -16,7 +16,8 @@ def getSatellites(sources, year):
     satellites = OrderedDict()
 
     if "sentinel" in sources and year >= 2015:
-        satellites["sentinel_2"] = "COPERNICUS/S2_SR"
+        # cannot use SR as they don't cover years before 2020
+        satellites["sentinel_2"] = "COPERNICUS/S2"
     if "landsat" in sources:
         if year >= 2013:
             satellites["landsat_8"] = "LANDSAT/LC08/C01/T1_SR"

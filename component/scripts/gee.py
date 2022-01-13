@@ -23,6 +23,8 @@ def getImage(sources, bands, mask, year):
     # priority selector for satellites
     satellites = cp.getSatellites(sources, year)
     for satelliteId in satellites:
+
+        # create the feature collection name
         dataset = (
             ee.ImageCollection(satellites[satelliteId])
             .filterDate(start, end)
@@ -118,6 +120,9 @@ def get_gee_vrt(geometry, mosaics, size, file, bands, sources, output):
             "satellites": satellites,
             "lock": threading.Lock(),
         }
+
+        # for buffer in ee_buffers:
+        #    down_buffer(buffer, **download_params)
 
         # download the images in parralel fashion
         with futures.ThreadPoolExecutor() as executor:  # use all the available CPU/GPU
