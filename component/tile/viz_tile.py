@@ -227,13 +227,9 @@ class InputTile(sw.Tile):
     def _update_dates(self, change):
         """update the available mosaics for the gee driver"""
 
-        print("I'm here")
-
         # exit if the driver is not GEE or empty sources
         if self.driver.v_model != "gee" or self.sources.v_model == []:
             return
-
-        print("That worth the shot")
 
         # get the starting date
         start = None
