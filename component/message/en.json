@@ -18,6 +18,7 @@
         "no_input": "One or several inputs are missing please process the previous steps",
         "inputs": "Using the set of points provided in \"{}\", the process will export the \"{}\" data using the \"{}\" bands",
         "no_valid": "Please verify you're input before launching the export process",
+        "empty_dataset": "One or more of your dataset were empty. Check that the satellites you selected were available for the selected dates. If the error persists, use the bug report button to get help from the development team.",
         "txt": [
             "The module will export the required images from the driver you selected. This images will be gathered by year to produce pdf files of clip time-series. This pdf files will be merged in one single file that will be the output of the process.",
             "Keep in mind that the size of the images can be sensible (in particular for planet data). Use an appropiate instance to be able to build your file",

@@ -115,10 +115,28 @@ class InputTile(sw.Tile):
         self._on_driver_change(None)
 
         # js behaviour
+        self.mosaics.on_event("blur", self._reorder_mosaics)
+        self.sources.observe(self._update_dates, "v_model")
         self.btn.on_event("click", self._display_data)
         self.driver.observe(self._on_driver_change, "v_model")
         self.planet_key.on_event("blur", self._check_key)
         self.tb_model.observe(self._update_points, "raw_geometry")
+
+    @su.switch("loading", on_widgets=["mosaics"])
+    def _reorder_mosaics(self, widget, event, data):
+
+        # remove the header from the items-list
+        items_no_header = [i for i in self.mosaics.items if "header" not in i]
+
+        # pick back the items from the items list
+        order_list = [
+            i["value"] for i in items_no_header if i["value"] in self.mosaics.v_model
+        ]
+        order_list.reverse()
+
+        self.mosaics.v_model = order_list
+
+        return self
 
     @su.switch("disabled", "loading", on_widgets=["planet_key", "mosaics"])
     def _check_key(self, widget, event, data):
@@ -205,6 +223,30 @@ class InputTile(sw.Tile):
 
         return
 
+    @su.switch("loading", on_widgets=["mosaics"])
+    def _update_dates(self, change):
+        """update the available mosaics for the gee driver"""
+
+        # exit if the driver is not GEE or empty sources
+        if self.driver.v_model != "gee" or self.sources.v_model == []:
+            return
+
+        # get the starting date
+        start = None
+        end = cp.gee_max_end_year
+        if "sentinel" in self.sources.v_model:
+            start = cp.gee_min_sentinel_year
+
+        if "landsat" in self.sources.v_model:
+            start = cp.gee_min_landsat_year
+
+        self.mosaics.items = [
+            {"text": y, "value": y} for y in range(end, start - 1, -1)
+        ]
+        self.mosaics.v_model = []
+
+        return self
+
     def _on_driver_change(self, change):
         """adapt the inputs to the requested sources"""
 
@@ -244,10 +286,7 @@ class InputTile(sw.Tile):
             self.bands.v_model = [*cp.getAvailableBands()][0]
 
             # adapt dates to available data
-            self.mosaics.items = [
-                y for y in range(cp.gee_max_end_year, cp.gee_min_start_year - 1, -1)
-            ]
-            self.mosaics.v_model = []
+            self._update_dates(None)
 
         return
 

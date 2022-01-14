@@ -6,7 +6,8 @@ import ee
 ee.Initialize()
 
 # data parameters
-gee_min_start_year = 1985  # launch of landsat 5
+gee_min_landsat_year = 1985  # launch of landsat 5
+gee_min_sentinel_year = 2015  # launch of sentinel 2
 gee_max_end_year = datetime.datetime.now().year
 sources = ["landsat", "sentinel"]
 
@@ -16,7 +17,8 @@ def getSatellites(sources, year):
     satellites = OrderedDict()
 
     if "sentinel" in sources and year >= 2015:
-        satellites["sentinel_2"] = "COPERNICUS/S2_SR"
+        # cannot use SR as they don't cover years before 2020
+        satellites["sentinel_2"] = "COPERNICUS/S2"
     if "landsat" in sources:
         if year >= 2013:
             satellites["landsat_8"] = "LANDSAT/LC08/C01/T1_SR"

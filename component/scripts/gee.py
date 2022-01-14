@@ -9,6 +9,7 @@ import ee
 from osgeo import gdal
 
 from component import parameter as cp
+from component.message import cm
 
 from .utils import min_diagonal
 
@@ -23,6 +24,8 @@ def getImage(sources, bands, mask, year):
     # priority selector for satellites
     satellites = cp.getSatellites(sources, year)
     for satelliteId in satellites:
+
+        # create the feature collection name
         dataset = (
             ee.ImageCollection(satellites[satelliteId])
             .filterDate(start, end)
@@ -119,6 +122,9 @@ def get_gee_vrt(geometry, mosaics, size, file, bands, sources, output):
             "lock": threading.Lock(),
         }
 
+        # for buffer in ee_buffers:
+        #    down_buffer(buffer, **download_params)
+
         # download the images in parralel fashion
         with futures.ThreadPoolExecutor() as executor:  # use all the available CPU/GPU
             executor.map(partial(down_buffer, **download_params), ee_buffers)
@@ -135,7 +141,12 @@ def get_gee_vrt(geometry, mosaics, size, file, bands, sources, output):
 
         # build the vrt
         ds = gdal.BuildVRT(str(vrt_path), filepaths)
-        ds.FlushCache()
+
+        # if there is no cahe to empty it means that one of the dataset was empty
+        try:
+            ds.FlushCache()
+        except AttributeError:
+            raise Exception(cm.export.empty_dataset)
 
         # check that the file was effectively created (gdal doesn't raise errors)
         if not vrt_path.is_file():
