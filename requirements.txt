@@ -6,11 +6,11 @@ pybind11
 
 # if you require GDAL and or pyproj in your module please uncomment these lines
 # there are set up to be inlined with SEPAL implementation of GDAL and PROJ version
-GDAL==3.4.0
+pygdal==3.4.0.10
 pyproj<3.0.0
 
 # uncomment if you want to run your module with GEE in SEPAL
-git+git://github.com/openforis/earthengine-api.git@v0.1.270#egg=earthengine-api&subdirectory=python
+git+https://github.com/openforis/earthengine-api.git@v0.1.270#egg=earthengine-api&subdirectory=python
 
 # the base lib to run any sepal_ui based app
 # don't forget to fix it to a specific version when you're app is ready
@@ -33,3 +33,4 @@ Shapely==1.8.0
 traitlets==5.1.1
 Unidecode==1.3.2
 Wand==0.6.7
+planet==1.4.9
