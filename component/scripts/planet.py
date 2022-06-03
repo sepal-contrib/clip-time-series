@@ -116,6 +116,19 @@ def validate_key(key):
 
     return planet.valid
 
+def list_mosaics(client):
+    """get all the mosaics available in a client without pagination limitations"""
+    
+    mosaics = client.get_mosaics()
+    while True:
+        for item in mosaics.get()['mosaics']:
+            yield item
+        mosaics = mosaics.next()
+        if mosaics is None:
+            break
+            
+    return
+
 
 def get_mosaics():
     """Return the available mosaics as a list of items for a v.Select object, retur None if not valid"""
@@ -125,11 +138,11 @@ def get_mosaics():
 
     # exit if the key is not valid
     if not planet.valid:
-        return res
+        return res    
 
     # filter the mosaics in 3 groups
-    bianual, monthly, other = ([], [], [])
-    for m in planet.client.get_mosaics().get()["mosaics"]:
+    bianual, monthly, other = [], [], []
+    for m in list_mosaics(planet.client):
         name = m["name"]
         type_, short = mosaic_name(name)
 
