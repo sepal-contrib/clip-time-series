@@ -18,6 +18,8 @@ def lint(session):
 def app(session):
     """Run the application."""
     init_notebook = toml.load("pyproject.toml")["sepal-ui"]["init-notebook"]
+    session.install("numpy")
+    session.install("gdal==3.4.3")
     session.install("-r", "requirements.txt")
     session.run("jupyter", "trust", init_notebook)
     session.run("voila", "--debug", init_notebook)
