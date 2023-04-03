@@ -243,13 +243,12 @@ def get_planet_vrt(geometry, mosaics, size, file, bands, out):
     vrt_list = {}
     nb_points = max(1, len(planet_grid) - 1)
     total_img = len(mosaics) * nb_points
+    mosaic_list = list_mosaics()
     out.reset_progress(total_img, "Image loaded")
     for m in mosaics:
 
         # get the mosaic from the mosaic name
-        mosaic_list = planet.client.get_mosaics().get()["mosaics"]
-        mosaic_names = [i["name"] for i in mosaic_list]
-        mosaic = mosaic_list[mosaic_names.index(m)]
+        mosaic = next(i for i in mosaic_list if i["name"] == m)
 
         # construct the quad list
         quads = [
@@ -265,8 +264,14 @@ def get_planet_vrt(geometry, mosaics, size, file, bands, out):
             "out": out,
             "lock": threading.Lock(),
         }
+
+        # debugging
+        # for quad in quads:
+        #    get_quad(quad, **download_params)
+
         # download the requested images
-        with futures.ThreadPoolExecutor() as executor:  # use all the available CPU/GPU
+        # use all the available CPU/GPU
+        with futures.ThreadPoolExecutor() as executor:
             executor.map(partial(get_quad, **download_params), quads)
         file_list = download_params["file_list"]
 
@@ -293,7 +298,7 @@ def get_planet_vrt(geometry, mosaics, size, file, bands, out):
     return vrt_list, title_list
 
 
-def get_quad_by_id(self, mosaic: str, quad_id: str):
+def get_quad_by_id(mosaic: dict, quad_id: str):
     """Get a quad response for a specific mosaic and quad.
 
     Args:
@@ -306,20 +311,11 @@ def get_quad_by_id(self, mosaic: str, quad_id: str):
     Raises:
         planet.api.exceptions.APIException: On API error.
     """
-    url = "basemaps/v1/mosaics/{}/quads/{}"
-    res = requests.get(url.format(mosaic["id"], quad_id))
+
+    url = "https://api.planet.com/basemaps/v1/mosaics/{}/quads/{}?api_key={}"
+    res = requests.get(url.format(mosaic["id"], quad_id, planet_model.credentials[0]))
 
     return res.json()
-
-
-# parameters
-planet.url = "https://api.planet.com/auth/v1/experimental/public/my/subscriptions"
-planet.data = "Planet"
-
-# attributes
-planet.valid = False
-planet.key = None
-planet.client = None
 
 
 def get_quad(quad_id, filename, name, mosaic, bands, file_list, out, lock=None):
@@ -338,14 +334,13 @@ def get_quad(quad_id, filename, name, mosaic, bands, file_list, out, lock=None):
 
         # to avoid the downloading of non existing quads
         try:
-
-            quad = planet.client.get_quad_by_id(mosaic, quad_id).get()
+            quad = get_quad_by_id(mosaic, quad_id)
             file_list.append(str(file))
         except Exception as e:
             out.add_msg(f"{e}", "error")
             return
 
-        planet.client.download_quad(quad).get_body().write(tmp_file)
+        requests.get(quad["_links"]["download"]).get_body().write(tmp_file)
 
         with rio.open(tmp_file) as src:
 
