@@ -26,4 +26,4 @@ polygon_colors = {
 polygon_width = 2
 
 # the basemap used in the file tile
-basemap = "Google Satellite"
+basemap = "Esri.WorldImagery"

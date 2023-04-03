@@ -12,10 +12,11 @@ from rasterio import warp
 from rasterio.crs import CRS
 import numpy as np
 from shapely import geometry as sg
-from PyPDF2 import PdfFileMerger, PdfFileReader
+from pypdf import PdfMerger
 import geopandas as gpd
 
 from component import parameter as cp
+from component import widget as cw
 
 from .utils import min_diagonal
 
@@ -46,7 +47,7 @@ def get_pdf(
     title_list,
     band_combo,
     geometry,
-    output,
+    output: cw.CustomAlert,
 ):
 
     # get the filename
@@ -213,11 +214,10 @@ def get_pdf(
 
     # merge all the pdf files
     output.add_live_msg("merge all pdf files")
-    mergedObject = PdfFileMerger()
+    merger = PdfMerger()
     for pdf in pdf_tmps:
-        mergedObject.append(PdfFileReader(str(pdf), "rb"))
-        pdf.unlink()
-    mergedObject.write(str(pdf_file))
+        merger.append(pdf)
+    merger.write(str(pdf_file))
 
     # flush the tmp repository
     shutil.rmtree(cp.tmp_dir)

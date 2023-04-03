@@ -23,6 +23,10 @@ class IdSelect(sw.SepalWidget, v.Select):
     def _check_value(self, change):
         """if "all" is selected, all other values should be removed and respectively"""
 
+        # monkey patch to avoid bug at runtile
+        change["new"] = change["new"] or []
+        change["old"] = change["old"] or []
+
         # exit if its a removal
         if len(change["new"]) <= len(change["old"]):
             return self

@@ -9,7 +9,6 @@ from functools import partial
 import re
 from datetime import datetime
 
-from planet import api
 from ipyleaflet import TileLayer
 from shapely import geometry as sg
 from shapely.ops import unary_union
@@ -118,7 +117,7 @@ def validate_key(key):
 
 def list_mosaics(client):
     """get all the mosaics available in a client without pagination limitations"""
-    
+
     mosaics = client.get_mosaics()
     while True:
         for item in mosaics.get()['mosaics']:
@@ -126,7 +125,7 @@ def list_mosaics(client):
         mosaics = mosaics.next()
         if mosaics is None:
             break
-            
+
     return
 
 
@@ -138,7 +137,7 @@ def get_mosaics():
 
     # exit if the key is not valid
     if not planet.valid:
-        return res    
+        return res
 
     # filter the mosaics in 3 groups
     bianual, monthly, other = [], [], []

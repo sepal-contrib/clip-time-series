@@ -12,5 +12,5 @@ gdal
 earthengine-api
 geopandas
 natsort
-PyPDF2
+pypdf
 Wand==0.6.7

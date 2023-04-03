@@ -5,11 +5,13 @@ import threading
 from concurrent import futures
 from functools import partial
 
+from sepal_ui import sepalwidgets as sw
 import ee
 from osgeo import gdal
 
 from component import parameter as cp
 from component.message import cm
+from component import widget as cw
 
 from .utils import min_diagonal
 
@@ -76,7 +78,7 @@ def getImage(sources, bands, mask, year):
     return (clip, satelliteId)
 
 
-def get_gee_vrt(geometry, mosaics, size, file, bands, sources, output):
+def get_gee_vrt(geometry, mosaics, size, file, bands, sources, output: cw.CustomAlert):
 
     #  guess if the geometry is only points
     is_point = all([r.geometry.geom_type == "Point" for _, r in geometry.iterrows()])
@@ -173,7 +175,7 @@ def down_buffer(
     ee_buffers,
     year,
     descriptions,
-    output,
+    output: sw.Alert,
     satellites,
     lock=None,
 ):
