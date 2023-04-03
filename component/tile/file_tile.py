@@ -1,17 +1,14 @@
-import json
-
-import pandas as pd
 import geopandas as gpd
 import ipyvuetify as v
-
-from sepal_ui import sepalwidgets as sw
+import pandas as pd
 from sepal_ui import mapping as sm
+from sepal_ui import sepalwidgets as sw
 from sepal_ui.scripts import utils as su
 
-from component import scripts as cs
-from component.message import cm
 from component import parameter as cp
+from component import scripts as cs
 from component import widget as cw
+from component.message import cm
 
 
 class TestTile(sw.Tile):
@@ -162,9 +159,8 @@ class FileTile(sw.Tile):
     def _test_unique(self, change):
         """
         Check that the chosen column for the id has only unique value
-        if that's not the case empty the v_model and display error message
+        if that's not the case empty the v_model and display error message.
         """
-
         # exit if no new value
         if not change["new"]:
             return

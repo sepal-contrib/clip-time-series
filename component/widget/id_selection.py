@@ -1,5 +1,5 @@
-from sepal_ui import sepalwidgets as sw
 import ipyvuetify as v
+from sepal_ui import sepalwidgets as sw
 from traitlets import observe
 
 
@@ -21,8 +21,7 @@ class IdSelect(sw.SepalWidget, v.Select):
 
     @observe("v_model")
     def _check_value(self, change):
-        """if "all" is selected, all other values should be removed and respectively"""
-
+        """if "all" is selected, all other values should be removed and respectively."""
         # monkey patch to avoid bug at runtile
         change["new"] = change["new"] or []
         change["old"] = change["old"] or []
@@ -45,8 +44,7 @@ class IdSelect(sw.SepalWidget, v.Select):
         return self
 
     def set_items(self, items):
-        """add items + the "all" value"""
-
+        """add items + the "all" value."""
         # clean the selection
         self.v_model = [self.ALL]
 

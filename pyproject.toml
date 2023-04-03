@@ -4,7 +4,7 @@ init-notebook = "ui.ipynb"
 [tool.ruff]
 ignore-init-module-imports = true
 fix = true
-select = ["E", "F", "W", "I", "D", "RUF"]
+select = ["E", "F", "W", "I", "RUF"]
 ignore = [
     "E501", # line too long | Black takes care of it
     "D101", # Missing docstring in public class | set it in __init__

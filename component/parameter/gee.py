@@ -57,8 +57,9 @@ def getAvailableBands():
     0 being the landsat 7,
     1 landsat 5,
     2, landsat 8
-    3: sentinel 2"""
-
+    3: sentinel 2
+    .
+    """
     bands = {
         "Red, Green, Blue": {
             "landsat_7": ["B3", "B2", "B1"],
@@ -114,8 +115,7 @@ def getAvailableBands():
 
 
 def getCloudMask(satelliteId):
-    """return the cloud masking function adapted to the apropriate satellite"""
-
+    """return the cloud masking function adapted to the apropriate satellite."""
     if satelliteId in ["landsat_5", "landsat_7"]:
 
         def cloudMask(image):

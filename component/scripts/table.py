@@ -1,12 +1,12 @@
 import shutil
 
-from ipyleaflet import GeoJSON, MarkerCluster, AwesomeIcon, Marker
+from ipyleaflet import AwesomeIcon, GeoJSON, Marker, MarkerCluster
+from ipywidgets import HTML
 from sepal_ui import color
 from sepal_ui import mapping as sm
-from ipywidgets import HTML
 
-from component.message import cm
 from component import parameter as cp
+from component.message import cm
 
 STYLE = {
     "stroke": True,
@@ -22,8 +22,7 @@ ICON = AwesomeIcon(name="", icon_color="white", marker_color="darkblue")
 
 
 def setMap(model, m: sm.SepalMap):
-    """create a map and a df list of points"""
-
+    """create a map and a df list of points."""
     # empty the map
     m.remove_all()
 

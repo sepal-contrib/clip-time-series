@@ -1,26 +1,26 @@
 # this file will be used as a singleton object in the explorer tile
-from pathlib import Path
-import requests
-from types import SimpleNamespace
-from itertools import product
+import re
 import threading
 from concurrent import futures
-from functools import partial
-import re
 from datetime import datetime
+from functools import partial
+from itertools import product
+from pathlib import Path
+from types import SimpleNamespace
 
-from ipyleaflet import TileLayer
-from shapely import geometry as sg
-from shapely.ops import unary_union
-from pyproj import CRS, Transformer
+import geopandas as gpd
 import numpy as np
 import rasterio as rio
-from rasterio.warp import calculate_default_transform, reproject, Resampling
-import geopandas as gpd
+import requests
 from osgeo import gdal
+from planet import api
+from pyproj import CRS, Transformer
+from rasterio.warp import calculate_default_transform
+from shapely import geometry as sg
+from shapely.ops import unary_union
 
-from component.message import cm
 from component import parameter as cp
+from component.message import cm
 
 from .utils import min_diagonal
 
@@ -38,16 +38,15 @@ planet.client = None
 # create the regex to match the different know planet datasets
 VISUAL = re.compile("^planet_medres_visual")  # will be removed from the selection
 ANALYTIC_MONTHLY = re.compile(
-    "^planet_medres_normalized_analytic_\d{4}-\d{2}_mosaic$"
+    "^planet_medres_normalized_analytic_\\d{4}-\\d{2}_mosaic$"
 )  # NICFI monthly
 ANALYTIC_BIANUAL = re.compile(
-    "^planet_medres_normalized_analytic_\d{4}-\d{2}_\d{4}-\d{2}_mosaic$"
+    "^planet_medres_normalized_analytic_\\d{4}-\\d{2}_\\d{4}-\\d{2}_mosaic$"
 )  # NICFI bianual
 
 
 def check_key():
-    """raise an error if the key is not validated"""
-
+    """raise an error if the key is not validated."""
     if not planet.valid:
         raise Exception(cm.planet.invalid_key)
 
@@ -56,7 +55,7 @@ def check_key():
 
 def mosaic_name(mosaic):
     """
-    Give back the shorten name of the mosaic so that it can be displayed on the thumbnails
+    Give back the shorten name of the mosaic so that it can be displayed on the thumbnails.
 
     Args:
         mosaic (str): the mosaic full name
@@ -64,7 +63,6 @@ def mosaic_name(mosaic):
     Return:
         (str, str): the type and the shorten name of the mosaic
     """
-
     if ANALYTIC_MONTHLY.match(mosaic):
         year = mosaic[34:38]
         start = datetime.strptime(mosaic[39:41], "%m").strftime("%b")
@@ -87,8 +85,7 @@ def mosaic_name(mosaic):
 
 
 def validate_key(key):
-    """Validate the API key and save it the key variable"""
-
+    """Validate the API key and save it the key variable."""
     # reset everything
     planet.valid = False
     planet.key = None
@@ -115,12 +112,12 @@ def validate_key(key):
 
     return planet.valid
 
-def list_mosaics(client):
-    """get all the mosaics available in a client without pagination limitations"""
 
+def list_mosaics(client):
+    """get all the mosaics available in a client without pagination limitations."""
     mosaics = client.get_mosaics()
     while True:
-        for item in mosaics.get()['mosaics']:
+        for item in mosaics.get()["mosaics"]:
             yield item
         mosaics = mosaics.next()
         if mosaics is None:
@@ -130,8 +127,7 @@ def list_mosaics(client):
 
 
 def get_mosaics():
-    """Return the available mosaics as a list of items for a v.Select object, retur None if not valid"""
-
+    """Return the available mosaics as a list of items for a v.Select object, retur None if not valid."""
     # init the results from the begining
     res = []
 
@@ -243,8 +239,7 @@ def get_planet_vrt(geometry, mosaics, size, file, bands, out):
 
 
 def get_planet_grid(squares, out):
-    """create a grid adapted to the points and to the planet initial grid"""
-
+    """create a grid adapted to the points and to the planet initial grid."""
     out.add_msg(cm.planet.grid)
 
     # get the shape of the aoi in EPSG:3857 proj
@@ -257,7 +252,7 @@ def get_planet_grid(squares, out):
     aoi_shp_proj = aoi_gdf["geometry"][0]
 
     # retreive the bb
-    aoi_bb = sg.box(*aoi_gdf.total_bounds)
+    sg.box(*aoi_gdf.total_bounds)
 
     # compute the longitude and latitude in the apropriate CRS
     crs_bounds = CRS.from_epsg(3857).area_of_use.bounds
@@ -324,8 +319,7 @@ def get_planet_grid(squares, out):
 
 
 def get_quad(quad_id, filename, name, mosaic, bands, file_list, out, lock=None):
-    """get one single quad from parameters"""
-
+    """get one single quad from parameters."""
     # check file existence
     file = cp.tmp_dir.joinpath(f"{filename}_{name}_{quad_id}.tif")
 

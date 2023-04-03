@@ -1,6 +1,6 @@
+from sepal_ui import model
 from traitlets import Any
 
-from sepal_ui import model
 from component import parameter as cp
 
 

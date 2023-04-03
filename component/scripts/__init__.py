@@ -7,7 +7,7 @@ If you use a module import all the functions here to only have 1 call to make
 """
 
 from .export import *
-from .table import *
-from .vizualisation import *
 from .gee import *
 from .planet import *
+from .table import *
+from .vizualisation import *

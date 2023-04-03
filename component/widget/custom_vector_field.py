@@ -1,14 +1,14 @@
-from traitlets import Dict
+import geopandas as gpd
+import ipyvuetify as v
 from sepal_ui import sepalwidgets as sw
 from sepal_ui.scripts import utils as su
-import ipyvuetify as v
-import geopandas as gpd
+from traitlets import Dict
 
 
 class CustomVectorField(v.Col, sw.SepalWidget):
     """
     A custom input widget to load vector data. The user will provide a vector file compatible with fiona.
-    Then the user will select the comlumn to use as Id in the pdf
+    Then the user will select the comlumn to use as Id in the pdf.
     """
 
     v_model = Dict(
@@ -38,20 +38,18 @@ class CustomVectorField(v.Col, sw.SepalWidget):
 
     def reset(self):
         """
-        Return the field to its initial state
+        Return the field to its initial state.
 
         Return:
             self
         """
-
         self.w_file.reset()
 
         return self
 
     @su.switch("loading", debug=True, on_widgets=["w_column"])
     def _update_file(self, change):
-        """update the file name, the v_model and reset the other widgets"""
-
+        """update the file name, the v_model and reset the other widgets."""
         # reset the widgets
         self.w_column.items = []
         self.w_column.v_model = None
@@ -75,8 +73,7 @@ class CustomVectorField(v.Col, sw.SepalWidget):
         return self
 
     def _update_column(self, change):
-        """Update the column name and empty the value list"""
-
+        """Update the column name and empty the value list."""
         # set the value
         tmp = self.v_model.copy()
         tmp["id_column"] = change["new"]
