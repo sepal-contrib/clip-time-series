@@ -120,7 +120,7 @@ class InputTile(sw.Tile):
         self.tb_model.observe(self._update_points, "raw_geometry")
 
     @su.switch("loading", on_widgets=["mosaics"])
-    def _reorder_mosaics(self, widget, event, data):
+    def _reorder_mosaics(self, *args):
 
         # remove the header from the items-list
         items_no_header = [i for i in self.mosaics.items if "header" not in i]
@@ -136,7 +136,7 @@ class InputTile(sw.Tile):
         return self
 
     @su.switch("disabled", "loading", on_widgets=["planet_key", "mosaics"])
-    def _check_key(self, widget, event, data):
+    def _check_key(self, *args):
 
         # reset everything related to mosaics and password
         self.planet_key.error_messages = None
@@ -157,7 +157,7 @@ class InputTile(sw.Tile):
 
         return
 
-    @su.loading_button(debug=True)
+    @su.loading_button()
     def _display_data(self, widget, event, data):
 
         # load the input

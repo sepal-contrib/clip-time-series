@@ -5,12 +5,14 @@ toml
 
 # the base lib to run any sepal_ui based app
 # don't forget to fix it to a specific version when you're app is ready
-sepal_ui
+sepal-ui
 
 # custom libs
+ipyvuetify==1.8.5
 gdal
 earthengine-api
 geopandas
 natsort
 pypdf
 Wand==0.6.7
+planet==2.0a6 # same as sepal_ui
