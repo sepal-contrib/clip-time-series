@@ -9,7 +9,6 @@ sepal-ui
 
 # custom libs
 ipyvuetify==1.8.5
-gdal
 earthengine-api
 geopandas
 natsort
