@@ -340,7 +340,8 @@ def get_quad(quad_id, filename, name, mosaic, bands, file_list, out, lock=None):
             out.add_msg(f"{e}", "error")
             return
 
-        requests.get(quad["_links"]["download"]).get_body().write(tmp_file)
+        r = requests.get(quad["_links"]["download"])
+        tmp_file.write_bytes(r.content)
 
         with rio.open(tmp_file) as src:
 
