@@ -9,7 +9,6 @@ def min_diagonal(polygon, square_size):
         polygon (shapely geometry): the polygon in 3857
         square_size (int): the size of the desired buffer around the polygon
     """
-
     minx, miny, maxx, maxy = polygon.bounds
 
     # get the diagonal

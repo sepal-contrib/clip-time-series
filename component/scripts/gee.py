@@ -1,14 +1,16 @@
-from pathlib import Path
-from urllib.request import urlretrieve
-import zipfile
 import threading
+import zipfile
 from concurrent import futures
 from functools import partial
+from pathlib import Path
+from urllib.request import urlretrieve
 
 import ee
 from osgeo import gdal
+from sepal_ui import sepalwidgets as sw
 
 from component import parameter as cp
+from component import widget as cw
 from component.message import cm
 
 from .utils import min_diagonal
@@ -76,10 +78,10 @@ def getImage(sources, bands, mask, year):
     return (clip, satelliteId)
 
 
-def get_gee_vrt(geometry, mosaics, size, file, bands, sources, output):
+def get_gee_vrt(geometry, mosaics, size, file, bands, sources, output: cw.CustomAlert):
 
     #  guess if the geometry is only points
-    is_point = all([r.geometry.geom_type == "Point" for _, r in geometry.iterrows()])
+    all([r.geometry.geom_type == "Point" for _, r in geometry.iterrows()])
 
     # get the filename
     filename = Path(file).stem
@@ -173,19 +175,18 @@ def down_buffer(
     ee_buffers,
     year,
     descriptions,
-    output,
+    output: sw.Alert,
     satellites,
     lock=None,
 ):
-    """download the image for a specific buffer"""
-
+    """download the image for a specific buffer."""
     # get back the image index
     j = ee_buffers.index(buffer)
 
     # get the image
     image, sat = getImage(sources, bands, buffer, year)
 
-    if sat == None:
+    if sat is None:
         print(f"year: {year}, j: {j}")
 
     if lock:

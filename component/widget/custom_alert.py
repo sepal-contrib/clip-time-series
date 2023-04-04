@@ -2,46 +2,27 @@ from sepal_ui import sepalwidgets as sw
 
 
 class CustomAlert(sw.Alert):
-    """
-    An alert design to be compatible with multithreading
-    Only addition being the possiblity to increase the progress bar from multiple threads
-    """
+    """Custom alert that update the progress iteratively."""
 
-    def __init__(self, **kwargs):
+    total_image: int = 0
 
-        # the variables used to save the progress
-        self.progress_count = 0
-        self.progress_total = 0
-        self.progress_msg = None
+    progress_text: str = ""
 
-        super().__init__(**kwargs)
+    current_progress = 0
 
-    def update_progress(self):
+    def reset_progress(self, total_image=1, progress_text=""):
+        """rest progress and setup the totla_image value and the text."""
+        self.total_image = total_image
+        self.progress_text = progress_text
+        self.current_progress = 0
 
-        # increase the counte value
-        self.progress_count += 1
+        super().update_progress(0, self.progress_text, total=self.total_image)
 
-        # compute the progress
-        progress = self.progress_count / self.progress_total
-
-        # display it in the alert
-        super().update_progress(progress, self.progress_msg)
-
-        return self
-
-    def reset_progress(self, total, msg):
-        """remove the progress value"""
-
-        # reset the counter
-        self.progress_count = 0
-
-        # set the new total
-        self.progress_total = total
-
-        # set the new message
-        self.progress_msg = msg
-
-        # remove the message
-        self.add_msg("")
-
-        return self
+    def update_progress(self) -> None:
+        """increment the progressses by 1."""
+        self.current_progress = self.current_progress + 1
+        return super().update_progress(
+            progress=self.current_progress,
+            msg=self.progress_text,
+            total=self.total_image,
+        )

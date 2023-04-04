@@ -1,17 +1,12 @@
-import json
-
-
-from wand.image import Image
-from wand.color import Color
-
 import ipywidgets as w
-
 from sepal_ui import sepalwidgets as sw
 from sepal_ui.scripts import utils as su
+from wand.color import Color
+from wand.image import Image
 
-from component.message import cm
 from component import scripts as cs
 from component import widget as cw
+from component.message import cm
 
 
 class ExportResult(sw.Tile):

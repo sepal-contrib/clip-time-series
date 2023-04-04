@@ -1,21 +1,20 @@
-from pathlib import Path
-from unidecode import unidecode
 import re
 import shutil
+from pathlib import Path
 
 import ee
-from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
+import numpy as np
 import rasterio as rio
-from rasterio.windows import from_bounds
+from matplotlib.backends.backend_pdf import PdfPages
+from pypdf import PdfMerger
 from rasterio import warp
 from rasterio.crs import CRS
-import numpy as np
-from shapely import geometry as sg
-from PyPDF2 import PdfFileMerger, PdfFileReader
-import geopandas as gpd
+from rasterio.windows import from_bounds
+from unidecode import unidecode
 
 from component import parameter as cp
+from component import widget as cw
 
 from .utils import min_diagonal
 
@@ -23,8 +22,7 @@ ee.Initialize()
 
 
 def is_pdf(file, bands):
-    """check if the pdf is already existing, return false if not"""
-
+    """check if the pdf is already existing, return false if not."""
     # get the filename
     filename = Path(file).stem
 
@@ -46,7 +44,7 @@ def get_pdf(
     title_list,
     band_combo,
     geometry,
-    output,
+    output: cw.CustomAlert,
 ):
 
     # get the filename
@@ -86,7 +84,7 @@ def get_pdf(
     output.reset_progress(len(pts), "Pdf page created")
     for index, r in buffers.iterrows():
 
-        name = re.sub("[^a-zA-Z\d\-\_]", "_", unidecode(str(r.id)))
+        name = re.sub("[^a-zA-Z\\d\\-\\_]", "_", unidecode(str(r.id)))
 
         pdf_tmp = cp.tmp_dir / f"{filename}_{name_bands}_tmp_pts_{name}.pdf"
         pdf_tmps.append(pdf_tmp)
@@ -213,11 +211,10 @@ def get_pdf(
 
     # merge all the pdf files
     output.add_live_msg("merge all pdf files")
-    mergedObject = PdfFileMerger()
+    merger = PdfMerger()
     for pdf in pdf_tmps:
-        mergedObject.append(PdfFileReader(str(pdf), "rb"))
-        pdf.unlink()
-    mergedObject.write(str(pdf_file))
+        merger.append(pdf)
+    merger.write(str(pdf_file))
 
     # flush the tmp repository
     shutil.rmtree(cp.tmp_dir)

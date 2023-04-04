@@ -1,0 +1,99 @@
+{
+  "app": {
+    "title": "Time series",
+    "drawer_item": {
+      "point": "Import points",
+      "viz": "Visualize Points",
+      "export": "Export selected data",
+      "about": "About"
+    }
+  },
+  "export": {
+    "title": "Export data",
+    "valid_data": "Before launching the exportation you need to validate your data. They will be display  in this very frame. If you need to perform any modification please go back to the previous stages",
+    "valid_btn": "Validate data",
+    "export_intro": "Click on the \"Export data\" button to export your data to a pdf file",
+    "btn": "Export data",
+    "down_btn": "PDF time series",
+    "no_input": "One or several inputs are missing please process the previous steps",
+    "inputs": "Using the set of points provided in \"{}\", the process will export the \"{}\" data using the \"{}\" bands",
+    "no_valid": "Please verify you're input before launching the export process",
+    "empty_dataset": "One or more of your dataset were empty. Check that the satellites you selected were available for the selected dates. If the error persists, use the bug report button to get help from the development team.",
+    "txt": [
+      "The module will export the required images from the driver you selected. This images will be gathered by year to produce pdf files of clip time-series. This pdf files will be merged in one single file that will be the output of the process.",
+      "Keep in mind that the size of the images can be sensible (in particular for planet data). Use an appropiate instance to be able to build your file",
+      "By the end of the process, only the pdf final file will remain in your folders, avoiding to overload your SEPAL quota."
+    ]
+  },
+  "viz": {
+    "title": "set up your inputs",
+    "intro": "Select sources and bands to be displayed",
+    "btn": "Validate your bands",
+    "sources": "select the sources satellites",
+    "mosaics": "Select mosaics",
+    "bands": "select the band to be displayed",
+    "points": "Display Point {}: (lat: {:.5f}, lng: {:.5f})",
+    "driver": "Select driver: ",
+    "semester": "Select semester: ",
+    "no_pts": "No points of observation are registered. Please go back to step 1",
+    "no_bands": "Please provide a the bands you want to observe on your images",
+    "no_sources": "please provide the satellite sources",
+    "sentinel_disabled": "The processing of the sentinel 2 images provide lots of blanks areas at the moment. we strongly suggest to only use landsat 7 images",
+    "disclaimer": "The bands displayed in this preview have not been stretched. The exporting process will vastly improve the contrats",
+    "start_year": "Specify the start year",
+    "end_year": "Specify the end year",
+    "square_size": "Square size",
+    "image_size": "Size of the Thumbnails",
+    "no_image": "No size is provided for the thumbnails",
+    "no_square": "Please provide a square size",
+    "no_mosaics": "Please select mosaics to be displayed",
+    "no_driver": "No dirver has been provided, please choose between GEE and Planet",
+    "no_key": "you are using the planet driver, please provide an API key",
+    "no_semester": "Please proved a semester to display",
+    "no_id_list": "Please provide the list of point you want to display"
+  },
+  "table": {
+    "title": "Select a file",
+    "intro": "Select the table in your sepal folders",
+    "btn": "load your pts file",
+    "file_select": "Select a file",
+    "not_a_file": "the file {} does not exist",
+    "error_reading_file": "the file {} cannot be read",
+    "wrong_headers": "The header of the file are not well diplayed",
+    "col_intro": "Select the columns associated with the 3 key informations",
+    "col_btn": "Validate your columns",
+    "col_lng": "select the Longitude column",
+    "col_lat": "Select the latitude column",
+    "col_id": "select the id column",
+    "read_columns": "The dropdown have been updated with the header of your file : [{}]",
+    "missing_input": "One of the column is unknown",
+    "valid_columns": "Your columns have been validated",
+    "types": "select types",
+    "duplicated": "There are duplicated values in your column. It cannot be used as an Id",
+    "test": {
+      "txt": "By clicking on the following btn you'll download a test dataset of points. This file will be downloaded to your SEPAL `~/downloads` folder.",
+      "btn": "Download the test dataset",
+      "title": "Download test data File",
+      "msg": "The test dataset have been downloaded and automatically loaded. It will be available at \"{}\" in your SEPAL folders."
+    },
+    "map": {
+      "title": "Display points"
+    }
+  },
+  "gee": {
+    "status": "STATUS: {}"
+  },
+  "result": {
+    "title": "Export results"
+  },
+  "planet": {
+    "grid": "Computing planet grid",
+    "key_label": "Planet key",
+    "export": "exporting the quads",
+    "file_exist": "the file: {} already exist",
+    "down_file": "Downloading file: {}",
+    "invalid_key": "The current key is invalid, please provide a valid Planet key",
+    "test_key": "We are currently checking your API key",
+    "valid_key": "Your key have been validated"
+  }
+}

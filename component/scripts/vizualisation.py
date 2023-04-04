@@ -1,6 +1,5 @@
-import traitlets
-
 import ipyvuetify as v
+import traitlets
 
 
 def set_msg(

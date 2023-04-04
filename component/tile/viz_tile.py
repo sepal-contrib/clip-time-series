@@ -1,17 +1,14 @@
-import json
-import warnings
 from pathlib import Path
-import time
 
-from sepal_ui import sepalwidgets as sw
-from sepal_ui.scripts import utils as su
 import ipyvuetify as v
 from natsort import natsorted
+from sepal_ui import sepalwidgets as sw
+from sepal_ui.scripts import utils as su
 
-from component.message import cm
 from component import parameter as cp
 from component import scripts as cs
 from component import widget as cw
+from component.message import cm
 
 
 class InputTile(sw.Tile):
@@ -123,7 +120,7 @@ class InputTile(sw.Tile):
         self.tb_model.observe(self._update_points, "raw_geometry")
 
     @su.switch("loading", on_widgets=["mosaics"])
-    def _reorder_mosaics(self, widget, event, data):
+    def _reorder_mosaics(self, *args):
 
         # remove the header from the items-list
         items_no_header = [i for i in self.mosaics.items if "header" not in i]
@@ -139,7 +136,7 @@ class InputTile(sw.Tile):
         return self
 
     @su.switch("disabled", "loading", on_widgets=["planet_key", "mosaics"])
-    def _check_key(self, widget, event, data):
+    def _check_key(self, *args):
 
         # reset everything related to mosaics and password
         self.planet_key.error_messages = None
@@ -160,14 +157,14 @@ class InputTile(sw.Tile):
 
         return
 
-    @su.loading_button(debug=True)
+    @su.loading_button()
     def _display_data(self, widget, event, data):
 
         # load the input
         id_list = self.viz_model.id_list
         driver = self.viz_model.driver
         file = self.tb_model.json_table["pathname"]
-        pts = self.tb_model.raw_geometry
+        self.tb_model.raw_geometry
         bands = self.viz_model.bands
         sources = self.viz_model.sources
         mosaics = self.viz_model.mosaics
@@ -225,8 +222,7 @@ class InputTile(sw.Tile):
 
     @su.switch("loading", on_widgets=["mosaics"])
     def _update_dates(self, change):
-        """update the available mosaics for the gee driver"""
-
+        """update the available mosaics for the gee driver."""
         # exit if the driver is not GEE or empty sources
         if self.driver.v_model != "gee" or self.sources.v_model == []:
             return
@@ -248,8 +244,7 @@ class InputTile(sw.Tile):
         return self
 
     def _on_driver_change(self, change):
-        """adapt the inputs to the requested sources"""
-
+        """adapt the inputs to the requested sources."""
         # get the driver
         driver = self.driver.v_model
 
@@ -291,8 +286,7 @@ class InputTile(sw.Tile):
         return
 
     def reset_inputs(self):
-        """reset all the inputs"""
-
+        """reset all the inputs."""
         self.sources.v_model = []
         self.planet_key.v_model = ""  # I cannot set to None it make bind bugging
         self.bands.v_model = None
@@ -301,8 +295,7 @@ class InputTile(sw.Tile):
         return
 
     def _update_points(self, change):
-        """update the available point list when a new point file is selected"""
-
+        """update the available point list when a new point file is selected."""
         if change["new"] is None:
             return
 

@@ -21,7 +21,7 @@ def getSatellites(sources, year):
         satellites["sentinel_2"] = "COPERNICUS/S2"
     if "landsat" in sources:
         if year >= 2013:
-            satellites["landsat_8"] = "LANDSAT/LC08/C01/T1_SR"
+            satellites["landsat_8"] = "LANDSAT/LC08/C02/T1_L2"
         if year <= 2013:
             satellites["landsat_5"] = "LANDSAT/LT05/C01/T1_SR"
         if year >= 1999:
@@ -57,55 +57,56 @@ def getAvailableBands():
     0 being the landsat 7,
     1 landsat 5,
     2, landsat 8
-    3: sentinel 2"""
-
+    3: sentinel 2
+    .
+    """
     bands = {
         "Red, Green, Blue": {
             "landsat_7": ["B3", "B2", "B1"],
             "landsat_5": ["B3", "B2", "B1"],
-            "landsat_8": ["B4", "B3", "B2"],
+            "landsat_8": ["SR_B4", "SR_B3", "SR_B2"],
             "sentinel_2": ["B4", "B3", "B2"],
         },
         "Nir, Red, Green": {
             "landsat_7": ["B4", "B3", "B2"],
             "landsat_5": ["B4", "B3", "B2"],
-            "landsat_8": ["B5", "B4", "B3"],
+            "landsat_8": ["SR_B5", "SR_B4", "SR_B3"],
             "sentinel_2": ["B8", "B4", "B3"],
         },
         "Nir, Swir1, Red": {
             "landsat_7": ["B4", "B5", "B3"],
             "landsat_5": ["B4", "B5", "B3"],
-            "landsat_8": ["B5", "B6", "B4"],
+            "landsat_8": ["SR_B5", "SR_B6", "SR_B4"],
             "sentinel_2": ["B8", "B11", "B4"],
         },
         "Swir2, Nir, Red": {
             "landsat_7": ["B7", "B4", "B3"],
             "landsat_5": ["B7", "B4", "B3"],
-            "landsat_8": ["B7", "B5", "B4"],
+            "landsat_8": ["SR_B7", "SR_B5", "SR_B4"],
             "sentinel_2": ["B12", "B8", "B4"],
         },
         "Swir2, Swir1, Red": {
             "landsat_7": ["B7", "B5", "B3"],
             "landsat_5": ["B7", "B5", "B3"],
-            "landsat_8": ["B7", "B6", "B4"],
+            "landsat_8": ["SR_B7", "SR_B6", "SR_B4"],
             "sentinel_2": ["B12", "B11", "B4"],
         },
         "Swir2, Nir, Green": {
             "landsat_7": ["B7", "B4", "B2"],
             "landsat_5": ["B7", "B4", "B2"],
-            "landsat_8": ["B7", "B5", "B3"],
+            "landsat_8": ["SR_B7", "SR_B5", "SR_B3"],
             "sentinel_2": ["B12", "B8", "B3"],
         },
         "ndvi": {  # 2 useful bands nir and red
             "landsat_7": ["B4", "B3"],
             "landsat_5": ["B4", "B3"],
-            "landsat_8": ["B5", "B4"],
+            "landsat_8": ["SR_B5", "SR_B4"],
             "sentinel_2": ["B8", "B4"],
         },
         "ndwi": {  # 2 useful bands nir and swir
             "landsat_7": ["B4", "B5"],
             "landsat_5": ["B4", "B5"],
-            "landsat_8": ["B5", "B6"],
+            "landsat_8": ["SR_B5", "SR_B6"],
             "sentinel_2": ["B8", "B11"],
         },
     }
@@ -114,8 +115,7 @@ def getAvailableBands():
 
 
 def getCloudMask(satelliteId):
-    """return the cloud masking function adapted to the apropriate satellite"""
-
+    """return the cloud masking function adapted to the apropriate satellite."""
     if satelliteId in ["landsat_5", "landsat_7"]:
 
         def cloudMask(image):
@@ -136,7 +136,7 @@ def getCloudMask(satelliteId):
             cloudShadowBitMask = 1 << 3
             cloudsBitMask = 1 << 5
             # Get the pixel QA band.
-            qa = image.select("pixel_qa")
+            qa = image.select("QA_PIXEL")
             # Both flags should be set to zero, indicating clear conditions.
             mask = (
                 qa.bitwiseAnd(cloudShadowBitMask)
