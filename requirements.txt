@@ -9,7 +9,7 @@ sepal-ui
 
 # custom libs
 ipyvuetify==1.8.5
-# earthengine-api silence until we find a solution to https://github.com/openforis/sepal/issues/277
+earthengine-api
 geopandas
 natsort
 pypdf
