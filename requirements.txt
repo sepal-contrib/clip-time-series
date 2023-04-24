@@ -15,3 +15,4 @@ natsort
 pypdf
 Wand==0.6.7
 planet==2.0a6 # same as sepal_ui
+unidecode
