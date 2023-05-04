@@ -9,7 +9,7 @@ sepal-ui
 
 # custom libs
 ipyvuetify==1.8.5
-git+https://github.com/openforis/earthengine-api.git@v0.1.343#egg=earthengine-api&subdirectory=python
+earthengine-api @ git+https://github.com/openforis/earthengine-api.git@v0.1.343#egg=earthengine-api&subdirectory=python
 geopandas
 natsort
 pypdf
