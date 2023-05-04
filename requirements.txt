@@ -8,6 +8,7 @@ toml
 sepal-ui
 
 # custom libs
+ipywidget==7.7.2
 ipyvuetify==1.8.5
 earthengine-api @ git+https://github.com/openforis/earthengine-api.git@v0.1.343#egg=earthengine-api&subdirectory=python
 geopandas
