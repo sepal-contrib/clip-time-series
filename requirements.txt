@@ -8,8 +8,8 @@ toml
 sepal-ui
 
 # custom libs
-ipywidget==7.7.2
-ipyvuetify==1.8.5
+ipyvuetify==1.8.1
+ipywidgets==7.6.5
 earthengine-api
 geopandas
 natsort
