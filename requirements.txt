@@ -8,10 +8,12 @@ toml
 sepal-ui
 
 # custom libs
+ipywidget==7.7.2
 ipyvuetify==1.8.5
 earthengine-api
 geopandas
 natsort
 pypdf
 Wand==0.6.7
+unidecode
 planet==2.0a6 # same as sepal_ui
