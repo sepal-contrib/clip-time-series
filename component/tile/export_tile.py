@@ -11,13 +11,11 @@ from component.message import cm
 
 class ExportResult(sw.Tile):
     def __init__(self):
-
         super().__init__(id_="export_widget", title=cm.result.title, inputs=[""])
 
 
 class ExportData(sw.Tile):
     def __init__(self, ex_model, viz_model, tb_model, result_tile):
-
         # gather model
         self.ex_model = (ex_model,)
         self.viz_model = viz_model
@@ -42,7 +40,6 @@ class ExportData(sw.Tile):
 
     @su.loading_button(debug=True)
     def _export_data(self, widget, event, data):
-
         # check only validation
         if not self.alert.check_input(self.viz_model.check, cm.export.no_input):
             return
@@ -56,7 +53,10 @@ class ExportData(sw.Tile):
         image_size = self.viz_model.image_size
         mosaics = self.viz_model.mosaics
 
-        if cs.is_pdf(file, bands):
+        # Create an unique name for the pdf with all vars
+        file = cs.get_pdf_path(file, sources, bands, square_size, image_size, mosaics)
+
+        if file.exists():
             self.alert.add_live_msg("Pdf already exist", "success")
             return
 

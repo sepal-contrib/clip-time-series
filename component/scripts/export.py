@@ -1,6 +1,7 @@
 import re
 import shutil
 from pathlib import Path
+from typing import List
 
 import ee
 import matplotlib.pyplot as plt
@@ -19,6 +20,43 @@ from component import widget as cw
 from .utils import min_diagonal
 
 ee.Initialize()
+
+
+def get_pdf_path(
+    path_name: str,
+    sources: list,
+    bands: str,
+    square_size: int,
+    image_size: int,
+    mosaics: List[int],
+):
+    """Create an unique name for the pdf with all vars"""
+
+    # print all the inputs and their type
+    print(path_name, type(path_name))
+    print(sources, type(sources))
+    print(bands, type(bands))
+    print(square_size, type(square_size))
+    print(image_size, type(image_size))
+    print(mosaics, type(mosaics))
+
+    # concatenate all input variables as a string
+    # to create an unique name for the pdf
+    name = "_".join(
+        [
+            Path(path_name).stem,
+            "_".join(sources),
+            "_".join(bands.split(", ")),
+            str(square_size),
+            str(image_size),
+            "_".join(str(mosaic) for mosaic in mosaics),
+        ]
+    )
+
+    # remove all special characters
+    name = re.sub("[^a-zA-Z\\d\\-\\_]", "_", name)
+
+    return Path(cp.result_dir) / f"{name}.pdf"
 
 
 def is_pdf(file, bands):
@@ -46,7 +84,6 @@ def get_pdf(
     geometry,
     output: cw.CustomAlert,
 ):
-
     # get the filename
     filename = Path(file).stem
 
@@ -83,7 +120,6 @@ def get_pdf(
     pdf_tmps = []
     output.reset_progress(len(pts), "Pdf page created")
     for index, r in buffers.iterrows():
-
         name = re.sub("[^a-zA-Z\\d\\-\\_]", "_", unidecode(str(r.id)))
 
         pdf_tmp = cp.tmp_dir / f"{filename}_{name_bands}_tmp_pts_{name}.pdf"
@@ -94,7 +130,6 @@ def get_pdf(
 
         # create the resulting pdf
         with PdfPages(pdf_tmp) as pdf:
-
             # the centroid is a point so I can safely take the first coords
             lat, lng = r.geometry.centroid.coords[0]
 
@@ -114,7 +149,6 @@ def get_pdf(
             placement_id = 0
 
             for m in mosaics:
-
                 # load the file
                 file = vrt_list[m]
 
