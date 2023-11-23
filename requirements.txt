@@ -1,9 +1,8 @@
-jupyter
 voila
 toml
 earthengine-api
 
-sepal-ui==2.16.4
+git+https://github.com/12rambau/sepal_ui.git@sepal_pre_release
 
 # custom libs
 geopandas
