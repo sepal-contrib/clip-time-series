@@ -13,7 +13,6 @@ from component.message import cm
 
 class TestTile(sw.Tile):
     def __init__(self, file_tile):
-
         # create the widgets
         txt = sw.Markdown(cm.table.test.txt)
         self.alert = sw.Alert()
@@ -35,9 +34,8 @@ class TestTile(sw.Tile):
         # js behaviour
         self.btn.on_event("click", self._import_test_file)
 
-    @su.loading_button(debug=True)
+    @su.loading_button()
     def _import_test_file(self, widget, event, data):
-
         # download the test dataset to the download folder
         test_file = cs.download_test_file(self.alert)
 
@@ -53,7 +51,6 @@ class TestTile(sw.Tile):
 
 class FileTile(sw.Tile):
     def __init__(self, tb_model, m):
-
         # gather model
         self.model = tb_model
 
@@ -95,7 +92,6 @@ class FileTile(sw.Tile):
         self.table_select.IdSelect.observe(self._test_unique, "v_model")
 
     def _change_type(self, change):
-
         if change["new"] == cp.types[0]:  # table
             self.table_select.show()
             self.vector_select.hide()
@@ -111,9 +107,8 @@ class FileTile(sw.Tile):
 
         return self
 
-    @su.loading_button(debug=True)
+    @su.loading_button()
     def _load_file(self, widget, event, data):
-
         # define variable
         table = self.model.json_table
         id_ = table["id_column"]
@@ -141,7 +136,6 @@ class FileTile(sw.Tile):
             )
 
         elif self.model.types == cp.types[1]:  # vector
-
             gdf = gpd.read_file(file).to_crs(4326)
             gdf = gdf.filter([id_, "geometry"])
             gdf = gdf.rename(columns={id_: "id"})
@@ -188,7 +182,6 @@ class FileTile(sw.Tile):
 
 class MapTile(sw.Tile):
     def __init__(self):
-
         # create the widgets
         self.map = sm.SepalMap([cp.basemap])
 

@@ -11,13 +11,11 @@ from component.message import cm
 
 class ExportResult(sw.Tile):
     def __init__(self):
-
         super().__init__(id_="export_widget", title=cm.result.title, inputs=[""])
 
 
 class ExportData(sw.Tile):
     def __init__(self, ex_model, viz_model, tb_model, result_tile):
-
         # gather model
         self.ex_model = (ex_model,)
         self.viz_model = viz_model
@@ -40,9 +38,8 @@ class ExportData(sw.Tile):
         # js behaviour
         self.btn.on_event("click", self._export_data)
 
-    @su.loading_button(debug=True)
+    @su.loading_button()
     def _export_data(self, widget, event, data):
-
         # check only validation
         if not self.alert.check_input(self.viz_model.check, cm.export.no_input):
             return
