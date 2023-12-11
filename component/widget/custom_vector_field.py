@@ -19,7 +19,6 @@ class CustomVectorField(v.Col, sw.SepalWidget):
     ).tag(sync=True)
 
     def __init__(self):
-
         self.w_file = sw.FileInput(
             [".shp", ".geojson", ".gpkg", ".kml"], label="Select vector file"
         )
@@ -47,7 +46,7 @@ class CustomVectorField(v.Col, sw.SepalWidget):
 
         return self
 
-    @su.switch("loading", debug=True, on_widgets=["w_column"])
+    @su.switch("loading", on_widgets=["w_column"])
     def _update_file(self, change):
         """update the file name, the v_model and reset the other widgets."""
         # reset the widgets
