@@ -1,6 +1,9 @@
 [sepal-ui]
 init-notebook = "ui.ipynb"
 
+[project]
+version = "0.2.0"
+
 [tool.ruff]
 ignore-init-module-imports = true
 fix = true
@@ -21,3 +24,12 @@ convention = "google"
 
 [tool.ruff.per-file-ignores]
 "*/__init__.py" = ["F403"] # unable to detect undefined names | hide internal strcuture
+
+[tool.commitizen]
+version = "0.2.0"
+update_changelog_on_bump = true
+changelog_file = "CHANGELOG.md"
+changelog_incremental = true
+version_files = [
+    "pyproject.toml:version",
+]
