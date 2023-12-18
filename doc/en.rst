@@ -1,9 +1,8 @@
 Clip time series
 ================
+*Download an automatically generated time series from customizable dates as a .pdf file*
 
-This module allows users to download an automatically generated time series from customizable dates as a :code:`.pdf`.
-
-Each mosaic will be represented as a custom square around the point of interest using the band combination selected by the user (ranging in size from 500 m x 500 m to 1000 km x 10000 km).
+This module allows users to download an automatically generated time series from customizable dates as a :code:`.pdf`. Each mosaic will be represented as a custom square around the point of interest using the band combination selected by the user (ranging in size from 500 m x 500 m to 1000 km x 10000 km).
 
 .. note::
 
