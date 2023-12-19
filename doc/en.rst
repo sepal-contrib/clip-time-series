@@ -202,5 +202,3 @@ Then, the module will present an active link in the green button to a preview of
     :group: clip-time-series
     :width: 49%
     :title: The output preview of a table input using Landsat mosaics
-
-.. custom-edit:: https://raw.githubusercontent.com/sepal-contrib/clip-time-series/release/doc/en.rst
