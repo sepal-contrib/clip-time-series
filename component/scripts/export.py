@@ -12,13 +12,71 @@ from rasterio import warp
 from rasterio.crs import CRS
 from rasterio.windows import from_bounds
 from unidecode import unidecode
+from sepal_ui.scripts.utils import init_ee
 
 from component import parameter as cp
 from component import widget as cw
 
 from .utils import min_diagonal
 
-ee.Initialize()
+init_ee()
+
+import numpy as np
+from skimage import exposure
+from skimage import img_as_float
+
+def process_band(band, adjustment_type):
+    # Remove NaNs and flatten the array for processing
+    valid_pixels = band[~np.isnan(band)].flatten()
+
+    if adjustment_type == "histogram_equalization":
+        h, bin_edges = np.histogram(valid_pixels, bins=3000, density=True)
+        cdf = h.cumsum()
+        cdf_normalized = cdf / cdf[-1]  # Normalize CDF
+        return np.interp(band.flatten(), bin_edges[:-1], cdf_normalized).reshape(band.shape)
+
+    elif adjustment_type == "contrast_stretching":
+        p2, p98 = np.percentile(valid_pixels, (2, 98))
+        return exposure.rescale_intensity(band, in_range=(p2, p98))
+
+    elif adjustment_type == "adaptive_equalization":
+        if band.dtype == np.float32 or band.dtype == np.float64:
+            if np.min(band) < -1 or np.max(band) > 1:
+                band = img_as_float(band)  # Convert image to float and scale to -1 to 1
+        else:
+            band = img_as_float(band)  # This also scales to 0 to 1
+        return exposure.equalize_adapthist(band, clip_limit=0.03)
+
+    elif adjustment_type == "standard_deviation":
+        mean = np.mean(valid_pixels)
+        std = np.std(valid_pixels)
+        return ((band - mean) / std)  # Normalize by standard deviation
+
+    elif adjustment_type == "percent_clip":
+        p1, p99 = np.percentile(valid_pixels, (1, 99))
+        return np.clip(band, p1, p99)
+
+    elif adjustment_type == "min_max":
+        min_val = np.min(valid_pixels)
+        max_val = np.max(valid_pixels)
+        return (band - min_val) / (max_val - min_val)
+
+    else:
+        raise ValueError("Unsupported adjustment type")
+
+
+# def adjust_contrast(band, type_: Literal["equalization"]):
+#     # remove the NaN from the analysis
+#     h_, bin_ = np.histogram(band[np.isfinite(band)].flatten(), 3000, density=True)
+
+#     cdf = h_.cumsum()  # cumulative distribution function
+#     cdf = 3000 * cdf / cdf[-1]  # normalize
+
+#     # use linear interpolation of cdf to find new pixel values
+#     band_equalized = np.interp(band.flatten(), bin_[:-1], cdf)
+#     band_equalized = band_equalized.reshape(band.shape)
+
+#     return band_equalized
 
 
 def is_pdf(file, bands):
@@ -32,29 +90,24 @@ def is_pdf(file, bands):
     # pdf name
     pdf_file = cp.result_dir / f"{filename}_{name_bands}.pdf"
 
+    print(pdf_file)
+
     return pdf_file.is_file()
 
 
 def get_pdf(
-    file,
-    mosaics,
-    image_size,
-    square_size,
-    vrt_list,
-    title_list,
+    pdf_filepath: Path,
+    mosaics: list,
+    image_size: int,
+    square_size: int,
+    vrt_list: dict,
+    title_list: dict,
     band_combo,
     geometry,
     output: cw.CustomAlert,
+    tmp_dir: str,
+    enhance_method: str,
 ):
-
-    # get the filename
-    filename = Path(file).stem
-
-    # extract the bands to use them in names
-    name_bands = "_".join(band_combo.split(", "))
-
-    # pdf name
-    pdf_file = cp.result_dir / f"{filename}_{name_bands}.pdf"
 
     # copy geometry to build the point gdf
     pts = geometry.copy()
@@ -81,12 +134,13 @@ def get_pdf(
     nb_col, nb_line = cp.get_dims(len(mosaics))
 
     pdf_tmps = []
+
     output.reset_progress(len(pts), "Pdf page created")
     for index, r in buffers.iterrows():
 
         name = re.sub("[^a-zA-Z\\d\\-\\_]", "_", unidecode(str(r.id)))
 
-        pdf_tmp = cp.tmp_dir / f"{filename}_{name_bands}_tmp_pts_{name}.pdf"
+        pdf_tmp = tmp_dir / f"{pdf_filepath.stem}_tmp_pts_{name}.pdf"
         pdf_tmps.append(pdf_tmp)
 
         if pdf_tmp.is_file():
@@ -143,25 +197,13 @@ def get_pdf(
 
                 bands = []
                 for i in range(3):
-                    band = data[i]
-                    # remove the NaN from the analysis
-                    h_, bin_ = np.histogram(
-                        band[np.isfinite(band)].flatten(), 3000, density=True
-                    )
-
-                    cdf = h_.cumsum()  # cumulative distribution function
-                    cdf = 3000 * cdf / cdf[-1]  # normalize
-
-                    # use linear interpolation of cdf to find new pixel values
-                    band_equalized = np.interp(band.flatten(), bin_[:-1], cdf)
-                    band_equalized = band_equalized.reshape(band.shape)
-
-                    bands.append(band_equalized)
+                    enhanced_band = process_band(data[i], enhance_method)
+                    bands.append(enhanced_band)
 
                 data = np.stack(bands, axis=0)
 
-                data = data / 3000
-                data = data.clip(0, 1)
+                # data = data / 3000
+                # data = data.clip(0, 1)
                 data = np.transpose(data, [1, 2, 0])
 
                 # create the square polygon
@@ -206,7 +248,6 @@ def get_pdf(
             # save the page
             pdf.savefig(fig)
             plt.close("all")
-
         output.update_progress()
 
     # merge all the pdf files
@@ -214,12 +255,12 @@ def get_pdf(
     merger = PdfMerger()
     for pdf in pdf_tmps:
         merger.append(pdf)
-    merger.write(str(pdf_file))
+    merger.write(str(pdf_filepath))
 
     # flush the tmp repository
     shutil.rmtree(cp.tmp_dir)
     cp.tmp_dir.mkdir()
 
-    output.add_live_msg("PDF output finished", "success")
+    output.add_live_msg(f"PDF output finished: {pdf_filepath}", "success")
 
-    return pdf_file
+    return pdf_filepath
