@@ -10,18 +10,26 @@ Each mosaic will be represented in a square of custom size from 500x500m to 1000
 
 The input can be a table file discribing points or a shapefile using geometries.
 
-Colors are stretched using [histogram equalization](https://en.wikipedia.org/wiki/Histogram_equalization).
+The output can be adjusted using any of the following enhancement methods:
+
+- Histogram Equalization
+- Contrast Stretching
+- Adaptive Equalization
+- Standard Deviation
+- Percent Clip
+- Min-Max
 
 To produce this image the software will use the most recent satellite with a cloudless mosaic using the following priority order :
 
 - Sentinel 2
+- Landsat 9
 - Landsat 8
 - landsat 5
 - landsat 7
 
 The user can manually swithc of the usage of sentinel or landsat data.
 
-The user can replace these satellites wih PlanetLab NICFI mosaics if it has register to the NICFI programm (free). Please follow thins [link](https://docs.sepal.io/en/latest/setup/nicfi.html) for more information.
+The user can replace these satellites wih PlanetLab NICFI mosaics if it has register to the NICFI programm (free). Please follow this [link](https://docs.sepal.io/en/latest/setup/nicfi.html) for more information.
 
 ![full_app](./doc/img/output_table_planet.png)
 
@@ -32,7 +40,7 @@ for more information about usage please read the [documentation](https://docs.se
 to install the project on your SEPAL account
 
 ```
-$ git clone https://github.com/openforis/clip-time-series.git
+$ git clone https://github.com/sepal-contrib/clip-time-series.git
 ```
 
 please retreive the develop branch where all our development live

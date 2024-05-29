@@ -1,7 +1,9 @@
 voila
 toml
 earthengine-api
+nox
 
+# Fixes authentication process
 git+https://github.com/12rambau/sepal_ui.git@sepal_pre_release
 
 gdal==3.8.3
@@ -12,3 +14,4 @@ natsort
 pypdf
 Wand==0.6.7
 unidecode
+scikit-image

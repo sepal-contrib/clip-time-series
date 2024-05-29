@@ -3,6 +3,7 @@ from pathlib import Path
 import ipyvuetify as v
 from natsort import natsorted
 from sepal_ui import sepalwidgets as sw
+from sepal_ui.planetapi import PlanetView
 from sepal_ui.scripts import utils as su
 
 from component import parameter as cp
@@ -12,7 +13,7 @@ from component.message import cm
 
 
 class InputTile(sw.Tile):
-    def __init__(self, viz_model, tb_model):
+    def __init__(self, viz_model, tb_model, planet_view: PlanetView):
 
         # gather model
         self.viz_model = viz_model
@@ -41,7 +42,7 @@ class InputTile(sw.Tile):
             chips=True,
         )
 
-        self.planet_key = sw.PasswordField(label=cm.planet.key_label).hide()
+        self.planet_key = planet_view
 
         self.bands = v.Select(
             items=[*cp.getAvailableBands()],
@@ -81,7 +82,6 @@ class InputTile(sw.Tile):
         # bind the inputs
         (
             self.viz_model.bind(self.sources, "sources")
-            .bind(self.planet_key, "planet_key")
             .bind(self.bands, "bands")
             .bind(self.mosaics, "mosaics")
             .bind(self.driver, "driver")
@@ -116,7 +116,9 @@ class InputTile(sw.Tile):
         self.sources.observe(self._update_dates, "v_model")
         self.btn.on_event("click", self._display_data)
         self.driver.observe(self._on_driver_change, "v_model")
-        self.planet_key.on_event("blur", self._check_key)
+
+        self.planet_key.planet_model.observe(self.set_mosaic_items, "active")
+
         self.tb_model.observe(self._update_points, "raw_geometry")
 
     @su.switch("loading", on_widgets=["mosaics"])
@@ -135,25 +137,19 @@ class InputTile(sw.Tile):
 
         return self
 
-    @su.switch("disabled", "loading", on_widgets=["planet_key", "mosaics"])
-    def _check_key(self, *args):
+    @su.switch("disabled", "loading", on_widgets=["mosaics"])
+    def set_mosaic_items(self, *args):
 
         # reset everything related to mosaics and password
-        self.planet_key.error_messages = None
         self.mosaics.items = []
         self.mosaics.v_model = []
 
         # exit if value is None
-        if not self.planet_key.v_model:
-            return
-
-        # check the key and exit if it's not valid
-        if not cs.validate_key(self.planet_key.v_model):
-            self.planet_key.error_messages = [cm.planet.invalid_key]
+        if not self.planet_key.planet_model.active:
             return
 
         # display the mosaics names
-        self.mosaics.items = cs.get_mosaics()
+        self.mosaics.items = cs.get_mosaics(self.planet_key.planet_model)
 
         return
 
@@ -170,7 +166,6 @@ class InputTile(sw.Tile):
         mosaics = self.viz_model.mosaics
         square_size = self.viz_model.square_size
         image_size = self.viz_model.image_size
-        planet_key = self.viz_model.planet_key
 
         # check input
         if not all(
@@ -187,7 +182,8 @@ class InputTile(sw.Tile):
             return
 
         # test specific to drivers
-        if driver == "planet" and not self.alert.check_input(planet_key, cm.viz.no_key):
+        if driver == "planet" and not self.planet_key.planet_model.active:
+            raise Exception(cm.viz.no_key)
             return
 
         if driver == "gee" and not self.alert.check_input(sources, cm.viz.no_sources):
@@ -288,7 +284,7 @@ class InputTile(sw.Tile):
     def reset_inputs(self):
         """reset all the inputs."""
         self.sources.v_model = []
-        self.planet_key.v_model = ""  # I cannot set to None it make bind bugging
+        self.planet_key.reset()
         self.bands.v_model = None
         self.mosaics.v_model = []
 

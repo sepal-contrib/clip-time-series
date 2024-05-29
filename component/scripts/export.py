@@ -2,23 +2,20 @@ import re
 import shutil
 from pathlib import Path
 
-import ee
+import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
-import rasterio as rio
 from matplotlib.backends.backend_pdf import PdfPages
 from pypdf import PdfMerger
-from rasterio import warp
-from rasterio.crs import CRS
-from rasterio.windows import from_bounds
+from sepal_ui.scripts.utils import init_ee
 from unidecode import unidecode
 
 from component import parameter as cp
 from component import widget as cw
 
-from .utils import min_diagonal
+from .utils import enhance_band, get_buffers, get_pdf_path, reproject
 
-ee.Initialize()
+init_ee()
 
 
 def is_pdf(file, bands):
@@ -32,61 +29,46 @@ def is_pdf(file, bands):
     # pdf name
     pdf_file = cp.result_dir / f"{filename}_{name_bands}.pdf"
 
+    print(pdf_file)
+
     return pdf_file.is_file()
 
 
 def get_pdf(
-    file,
-    mosaics,
-    image_size,
-    square_size,
-    vrt_list,
-    title_list,
+    input_file_path: Path,
+    mosaics: list,
+    image_size: int,
+    square_size: int,
+    vrt_list: dict,
+    title_list: dict,
     band_combo,
-    geometry,
+    geometry: gpd.GeoDataFrame,
     output: cw.CustomAlert,
+    tmp_dir: str,
+    enhance_method: str = "min_max",
+    sources: list = [],
 ):
-
-    # get the filename
-    filename = Path(file).stem
-
-    # extract the bands to use them in names
-    name_bands = "_".join(band_combo.split(", "))
-
-    # pdf name
-    pdf_file = cp.result_dir / f"{filename}_{name_bands}.pdf"
-
-    # copy geometry to build the point gdf
-    pts = geometry.copy()
-    pts.geometry = pts.geometry.centroid
-
+    pdf_filepath = get_pdf_path(
+        input_file_path.stem, sources, band_combo, image_size, enhance_method
+    )
     # build the geometries that will be drawn on the thumbnails
     # can stay in EPSG:3857 as it will be used in this projection
     geoms = geometry.to_crs(3857)
     geoms.geometry = geoms.buffer(square_size / 2, cap_style=3)
 
-    # build the dictionary to use to build the images thumbnails
-    size_dict = {}
-    for _, r in geometry.to_crs(3857).iterrows():
-        size_dict[r.id] = min_diagonal(r.geometry, image_size)
-
-    # create the buffer grid
-    buffers = pts.to_crs(3857)
-    buffers["geometry"] = buffers.apply(
-        lambda r: r.geometry.buffer(size_dict[r.id] / 2, cap_style=3), axis=1
-    )
-    buffers = buffers.to_crs(4326)
+    buffers = get_buffers(geometry, image_size)
 
     # get the disposition in col and line
     nb_col, nb_line = cp.get_dims(len(mosaics))
 
     pdf_tmps = []
-    output.reset_progress(len(pts), "Pdf page created")
+
+    output.reset_progress(len(buffers), "Pdf page created")
     for index, r in buffers.iterrows():
 
         name = re.sub("[^a-zA-Z\\d\\-\\_]", "_", unidecode(str(r.id)))
 
-        pdf_tmp = cp.tmp_dir / f"{filename}_{name_bands}_tmp_pts_{name}.pdf"
+        pdf_tmp = tmp_dir / f"{pdf_filepath.stem}_tmp_pts_{name}.pdf"
         pdf_tmps.append(pdf_tmp)
 
         if pdf_tmp.is_file():
@@ -113,56 +95,33 @@ def get_pdf(
             # display the images in a fig and export it as a pdf page
             placement_id = 0
 
-            for m in mosaics:
+            for mosaic in mosaics:
 
                 # load the file
-                file = vrt_list[m]
+                file = vrt_list[mosaic]
 
                 # extract the buffer bounds
                 bounds = r.geometry.bounds
 
-                with rio.open(file) as f:
-                    data = f.read(window=from_bounds(*bounds, f.transform))
-
-                    # reproject to 3857
-                    # I want the final image to be as square not a rectangle
-                    src_crs = CRS.from_epsg(4326)
-                    dst_crs = CRS.from_epsg(3857)
-                    data, _ = warp.reproject(
-                        data,
-                        src_transform=f.transform,
-                        src_crs=src_crs,
-                        dst_crs=dst_crs,
-                    )
-
-                    # extract all the value separately, matplotlib uses
-                    # a different convention
-                    xmin, ymin, xmax, ymax = warp.transform_bounds(
-                        src_crs, dst_crs, *bounds
-                    )
+                data, (xmin, ymin, xmax, ymax) = reproject(file, bounds)
 
                 bands = []
-                for i in range(3):
-                    band = data[i]
-                    # remove the NaN from the analysis
-                    h_, bin_ = np.histogram(
-                        band[np.isfinite(band)].flatten(), 3000, density=True
-                    )
-
-                    cdf = h_.cumsum()  # cumulative distribution function
-                    cdf = 3000 * cdf / cdf[-1]  # normalize
-
-                    # use linear interpolation of cdf to find new pixel values
-                    band_equalized = np.interp(band.flatten(), bin_[:-1], cdf)
-                    band_equalized = band_equalized.reshape(band.shape)
-
-                    bands.append(band_equalized)
+                for i in range(data.shape[0]):
+                    enhanced_band = enhance_band(data[i], enhance_method)
+                    bands.append(enhanced_band)
 
                 data = np.stack(bands, axis=0)
 
-                data = data / 3000
-                data = data.clip(0, 1)
-                data = np.transpose(data, [1, 2, 0])
+                if data.shape[0] == 1:
+                    # When there is only one band, do not transpose; use a colormap
+                    data = (
+                        data.squeeze()
+                    )  # Remove the single band dimension for display
+                    cmap = "viridis"  # Or another appropriate colormap like 'gray', 'RdYlGn', etc.
+                else:
+                    # For multi-band data, transpose to match (height, width, bands)
+                    data = np.transpose(data, [1, 2, 0])
+                    cmap = None  # Default, for RGB
 
                 # create the square polygon
                 x_polygon, y_polygon = geoms.loc[index]["geometry"].exterior.coords.xy
@@ -170,7 +129,10 @@ def get_pdf(
                 place = cp.getPositionPdf(placement_id, nb_col)
                 ax = axes[place[0], place[1]]
                 ax.imshow(
-                    data, interpolation="nearest", extent=[xmin, xmax, ymin, ymax]
+                    data,
+                    interpolation="nearest",
+                    extent=[xmin, xmax, ymin, ymax],
+                    cmap=cmap,  # Use the defined colormap for single-band images
                 )
 
                 ax.plot(
@@ -181,7 +143,7 @@ def get_pdf(
                 )
 
                 ax.set_title(
-                    title_list[m][index],
+                    title_list[mosaic][index],
                     x=0.0,
                     y=1.0,
                     fontsize="small",
@@ -206,7 +168,6 @@ def get_pdf(
             # save the page
             pdf.savefig(fig)
             plt.close("all")
-
         output.update_progress()
 
     # merge all the pdf files
@@ -214,12 +175,12 @@ def get_pdf(
     merger = PdfMerger()
     for pdf in pdf_tmps:
         merger.append(pdf)
-    merger.write(str(pdf_file))
+    merger.write(str(pdf_filepath))
 
     # flush the tmp repository
     shutil.rmtree(cp.tmp_dir)
     cp.tmp_dir.mkdir()
 
-    output.add_live_msg("PDF output finished", "success")
+    output.add_live_msg(f"PDF output finished: {pdf_filepath}", "success")
 
-    return pdf_file
+    return pdf_filepath

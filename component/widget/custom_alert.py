@@ -18,11 +18,15 @@ class CustomAlert(sw.Alert):
 
         super().update_progress(0, self.progress_text, total=self.total_image)
 
+        self.progress_bar.total = self.total_image
+
     def update_progress(self) -> None:
         """increment the progressses by 1."""
+
         self.current_progress = self.current_progress + 1
-        return super().update_progress(
+        super().update_progress(
             progress=self.current_progress,
             msg=self.progress_text,
             total=self.total_image,
         )
+        # print("####", self.current_progress, self.total_image, self.progress_text)
