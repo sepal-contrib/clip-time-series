@@ -1,20 +1,20 @@
+import os
 import shutil
 import sys
-import os
+
 import pytest
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
+import tempfile
+from pathlib import Path
+from test.planet_results import *
+
+from component.scripts.planet import get_planet_grid, get_planet_vrt, get_quad
 from component.scripts.utils import (
     get_buffers,
     get_quad_dict,
-    get_vrt_filename,
 )
-from pathlib import Path
-import tempfile
-from component.scripts.planet import get_planet_grid, get_planet_vrt, get_quad
-
-from test.planet_results import *
 
 # Test different parameters
 parameters = [

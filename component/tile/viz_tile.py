@@ -3,8 +3,8 @@ from pathlib import Path
 import ipyvuetify as v
 from natsort import natsorted
 from sepal_ui import sepalwidgets as sw
-from sepal_ui.scripts import utils as su
 from sepal_ui.planetapi import PlanetView
+from sepal_ui.scripts import utils as su
 
 from component import parameter as cp
 from component import scripts as cs

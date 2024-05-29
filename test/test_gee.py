@@ -1,20 +1,19 @@
+import os
 import shutil
 import sys
-import os
+
+import ee
 import pytest
 import rasterio
-import ee
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from component.scripts.utils import get_pdf_path, get_vrt_filename
-from pathlib import Path
 import tempfile
-from component.scripts.export import get_pdf
-from component.scripts.gee import down_buffer, get_ee_image, get_gee_vrt
+from pathlib import Path
 from test.gee_results import *
-from component import parameter as cp
 
+from component import parameter as cp
+from component.scripts.gee import down_buffer, get_ee_image, get_gee_vrt
 
 # Test different parameters
 parameters = [

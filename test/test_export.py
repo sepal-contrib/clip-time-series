@@ -1,10 +1,10 @@
-from pathlib import Path
 import shutil
 import tempfile
+from pathlib import Path
+
 from component.scripts.export import get_pdf
 from component.scripts.gee import get_gee_vrt
 from component.scripts.planet import get_planet_vrt
-from component.scripts.utils import get_pdf_path, get_vrt_filename
 
 
 def test_get_gee_pdf(geometries, alert):

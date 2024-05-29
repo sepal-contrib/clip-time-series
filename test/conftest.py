@@ -1,10 +1,11 @@
-import pytest
-import geopandas as gpd
-import component.widget as cw
 import io
 import os
 
+import geopandas as gpd
+import pytest
 from sepal_ui.planetapi import PlanetModel
+
+import component.widget as cw
 
 
 @pytest.fixture

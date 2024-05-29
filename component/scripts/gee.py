@@ -1,10 +1,9 @@
-import threading
 import concurrent.futures
-
-from typing import Literal, Tuple
+import threading
 import zipfile
 from functools import partial
 from pathlib import Path
+from typing import Literal, Tuple
 from urllib.request import urlretrieve
 
 import ee
@@ -16,7 +15,7 @@ from component import parameter as cp
 from component import widget as cw
 from component.message import cm
 
-from .utils import get_buffers, get_vrt_filename, min_diagonal
+from .utils import get_buffers, get_vrt_filename
 
 init_ee()
 

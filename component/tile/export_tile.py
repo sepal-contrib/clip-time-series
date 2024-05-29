@@ -1,20 +1,19 @@
-from pathlib import Path
 import shutil
 import tempfile
+from pathlib import Path
+
 import ipywidgets as w
 from sepal_ui import sepalwidgets as sw
+from sepal_ui.planetapi import PlanetModel
 from sepal_ui.scripts import utils as su
 from traitlets import link
 from wand.color import Color
 from wand.image import Image
 
-from sepal_ui.planetapi import PlanetModel
-
 from component import scripts as cs
 from component import widget as cw
 from component.message import cm
-from component.parameter.directory import result_dir
-from component.scripts.utils import get_pdf_path, get_vrt_filename
+from component.scripts.utils import get_pdf_path
 
 
 class ExportResult(sw.Tile):

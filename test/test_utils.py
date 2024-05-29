@@ -1,5 +1,5 @@
-import sys
 import os
+import sys
 
 import rasterio
 
@@ -8,10 +8,10 @@ from component.scripts.gee import down_buffer
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import tempfile
 from pathlib import Path
+from test.gee_results import *
+
 from component import parameter as cp
 from component.scripts.utils import enhance_band
-
-from test.gee_results import *
 
 
 def test_enhance_band(alert):

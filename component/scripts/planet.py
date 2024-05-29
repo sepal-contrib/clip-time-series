@@ -1,8 +1,8 @@
 # this file will be used as a singleton object in the explorer tile
+import concurrent.futures
 import re
 import tempfile
 import threading
-import concurrent.futures
 from datetime import datetime
 from functools import partial
 from itertools import product
@@ -19,12 +19,12 @@ from rasterio.warp import calculate_default_transform
 from sepal_ui.planetapi import PlanetModel
 from shapely import geometry as sg
 from shapely.ops import unary_union
-from component import widget as cw
 
 from component import parameter as cp
+from component import widget as cw
 from component.message import cm
 
-from .utils import get_buffers, get_quad_dict, get_vrt_filename, min_diagonal
+from .utils import get_buffers, get_quad_dict, get_vrt_filename
 
 # create the regex to match the different know planet datasets
 VISUAL = re.compile("^planet_medres_visual")  # will be removed from the selection
@@ -200,7 +200,7 @@ def get_planet_vrt(
     vrt_list = {}
     nb_points = max(1, len(planet_grid))
     total_img = len(mosaics) * nb_points
-    mosaic_list = planet_model.get_mosaics()
+    planet_model.get_mosaics()
     out.reset_progress(total_img, "Progress")
 
     # Create the quad id list

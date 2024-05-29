@@ -1,24 +1,21 @@
 import re
 import shutil
 from pathlib import Path
+
 import geopandas as gpd
-import ee
 import matplotlib.pyplot as plt
 import numpy as np
-import rasterio as rio
 from matplotlib.backends.backend_pdf import PdfPages
 from pypdf import PdfMerger
-from unidecode import unidecode
 from sepal_ui.scripts.utils import init_ee
+from unidecode import unidecode
 
 from component import parameter as cp
 from component import widget as cw
 
-from .utils import enhance_band, get_buffers, get_pdf_path, min_diagonal, reproject
+from .utils import enhance_band, get_buffers, get_pdf_path, reproject
 
 init_ee()
-
-import numpy as np
 
 
 def is_pdf(file, bands):

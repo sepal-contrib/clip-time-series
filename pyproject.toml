@@ -11,6 +11,9 @@ select = ["E", "F", "W", "I", "RUF"]
 ignore = [
     "E501", # line too long | Black takes care of it
     "D101", # Missing docstring in public class | set it in __init__
+    "E402", # module level import not at top of file 
+    "F405", # name may be undefined, or defined from star imports: specifically for test/ modules
+    "F403", # unable to detect undefined names | hide internal strcuture: specifically for test/ modules
 ]
 
 # init file are here to hide the internal structure to the user of the lib

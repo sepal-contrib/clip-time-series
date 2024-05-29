@@ -1,8 +1,8 @@
 import datetime
 from collections import OrderedDict
-from sepal_ui.scripts.utils import init_ee
 
 import ee
+from sepal_ui.scripts.utils import init_ee
 
 init_ee()
 
