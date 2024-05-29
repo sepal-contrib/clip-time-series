@@ -14,7 +14,7 @@ from component import scripts as cs
 from component import widget as cw
 from component.message import cm
 from component.parameter.directory import result_dir
-from component.scripts.utils import get_pdf_path
+from component.scripts.utils import get_pdf_path, get_vrt_filename
 
 
 class ExportResult(sw.Tile):
@@ -81,10 +81,12 @@ class ExportData(sw.Tile):
         square_size = self.viz_model.square_size
         image_size = self.viz_model.image_size
         mosaics = self.viz_model.mosaics
+        enhance_method = self.ex_model.enhance_method
 
         tmp_dir = Path(tempfile.mkdtemp())
-
-        pdf_filepath = get_pdf_path(file.stem, sources, bands, square_size, image_size)
+        pdf_filepath = get_pdf_path(
+            file.stem, sources, bands, image_size, enhance_method
+        )
 
         try:
 
@@ -98,7 +100,7 @@ class ExportData(sw.Tile):
                     geometry,
                     mosaics,
                     image_size,
-                    pdf_filepath.stem,
+                    file.stem,
                     bands,
                     self.alert,
                     tmp_dir,
@@ -110,7 +112,7 @@ class ExportData(sw.Tile):
                     geometry,
                     mosaics,
                     image_size,
-                    pdf_filepath.stem,
+                    file.stem,
                     bands,
                     sources,
                     self.alert,
@@ -119,7 +121,7 @@ class ExportData(sw.Tile):
 
             # export as pdf
             pdf_file = cs.get_pdf(
-                pdf_filepath,
+                file,
                 mosaics,
                 image_size,
                 square_size,
@@ -129,7 +131,8 @@ class ExportData(sw.Tile):
                 geometry,
                 self.alert,
                 tmp_dir,
-                self.ex_model.enhance_method,
+                enhance_method,
+                sources,
             )
 
             # create a download btn

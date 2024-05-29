@@ -1,7 +1,7 @@
 import threading
 import concurrent.futures
 
-from typing import List, Literal, Tuple
+from typing import Literal, Tuple
 import zipfile
 from functools import partial
 from pathlib import Path
@@ -16,7 +16,7 @@ from component import parameter as cp
 from component import widget as cw
 from component.message import cm
 
-from .utils import min_diagonal
+from .utils import get_buffers, get_vrt_filename, min_diagonal
 
 init_ee()
 
@@ -26,7 +26,7 @@ def get_ee_image(
     satellite_id: Literal["sentinel_2", "landsat_5", "landsat_7", "landsat_8"],
     start: str,
     end: str,
-    bands: str,
+    str_bands: str,
     aoi: ee.geometry.Geometry,
 ) -> Tuple[ee.ImageCollection, ee.Image]:
 
@@ -38,9 +38,13 @@ def get_ee_image(
         .map(cp.getCloudMask(satellite_id))
     )
 
-    ee_image = (
-        dataset.median().clip(aoi).select(cp.getAvailableBands()[bands][satellite_id])
-    )
+    bands = cp.getAvailableBands()[str_bands][satellite_id]
+    ee_image = dataset.median().clip(aoi).select(bands)
+
+    # calculate the NDVI or NDWI if needed
+    # Bands are in the correct order to do the index calculation
+    if "ndvi" in str_bands or "ndwi" in str_bands:
+        ee_image = ee_image.normalizedDifference(bands).rename("ndvi")
 
     return dataset, ee_image
 
@@ -114,7 +118,7 @@ def getImage(
 def get_gee_vrt(
     geometry,
     mosaics,
-    size,
+    image_size,
     filename: str,
     bands: str,
     sources,
@@ -122,20 +126,8 @@ def get_gee_vrt(
     tmp_dir: Path,
 ):
 
-    #  guess if the geometry is only points
-    all([r.geometry.geom_type == "Point" for _, r in geometry.iterrows()])
-
-    # create the points list
-    ee_pts = [ee.Geometry.Point(*g.centroid.coords) for g in geometry.geometry]
-
-    # get the optimal size buffer
-    size_list = [min_diagonal(g, size) for g in geometry.to_crs(3857).geometry]
-
-    # create the buffers
-    ee_buffers = [pt.buffer(s / 2).bounds() for pt, s in zip(ee_pts, size_list)]
-
-    # extract the bands to use them in names
-    name_bands = "_".join(bands.split(", "))
+    filename = get_vrt_filename(filename, sources, bands, image_size)
+    ee_buffers = get_buffers(gdf=geometry, size=image_size, gee=True)
 
     # create a filename list
     descriptions = {}
@@ -224,7 +216,7 @@ def down_buffer(
     buffer,
     sources,
     bands,
-    ee_buffers,
+    ee_buffers: list,
     year,
     descriptions,
     output: sw.Alert,
@@ -278,4 +270,4 @@ def down_buffer(
     # update the output
     output.update_progress()
 
-    return
+    return dst

@@ -1,82 +1,24 @@
 import re
 import shutil
 from pathlib import Path
-
+import geopandas as gpd
 import ee
 import matplotlib.pyplot as plt
 import numpy as np
 import rasterio as rio
 from matplotlib.backends.backend_pdf import PdfPages
 from pypdf import PdfMerger
-from rasterio import warp
-from rasterio.crs import CRS
-from rasterio.windows import from_bounds
 from unidecode import unidecode
 from sepal_ui.scripts.utils import init_ee
 
 from component import parameter as cp
 from component import widget as cw
 
-from .utils import min_diagonal
+from .utils import enhance_band, get_buffers, get_pdf_path, min_diagonal, reproject
 
 init_ee()
 
 import numpy as np
-from skimage import exposure
-from skimage import img_as_float
-
-def process_band(band, adjustment_type):
-    # Remove NaNs and flatten the array for processing
-    valid_pixels = band[~np.isnan(band)].flatten()
-
-    if adjustment_type == "histogram_equalization":
-        h, bin_edges = np.histogram(valid_pixels, bins=3000, density=True)
-        cdf = h.cumsum()
-        cdf_normalized = cdf / cdf[-1]  # Normalize CDF
-        return np.interp(band.flatten(), bin_edges[:-1], cdf_normalized).reshape(band.shape)
-
-    elif adjustment_type == "contrast_stretching":
-        p2, p98 = np.percentile(valid_pixels, (2, 98))
-        return exposure.rescale_intensity(band, in_range=(p2, p98))
-
-    elif adjustment_type == "adaptive_equalization":
-        if band.dtype == np.float32 or band.dtype == np.float64:
-            if np.min(band) < -1 or np.max(band) > 1:
-                band = img_as_float(band)  # Convert image to float and scale to -1 to 1
-        else:
-            band = img_as_float(band)  # This also scales to 0 to 1
-        return exposure.equalize_adapthist(band, clip_limit=0.03)
-
-    elif adjustment_type == "standard_deviation":
-        mean = np.mean(valid_pixels)
-        std = np.std(valid_pixels)
-        return ((band - mean) / std)  # Normalize by standard deviation
-
-    elif adjustment_type == "percent_clip":
-        p1, p99 = np.percentile(valid_pixels, (1, 99))
-        return np.clip(band, p1, p99)
-
-    elif adjustment_type == "min_max":
-        min_val = np.min(valid_pixels)
-        max_val = np.max(valid_pixels)
-        return (band - min_val) / (max_val - min_val)
-
-    else:
-        raise ValueError("Unsupported adjustment type")
-
-
-# def adjust_contrast(band, type_: Literal["equalization"]):
-#     # remove the NaN from the analysis
-#     h_, bin_ = np.histogram(band[np.isfinite(band)].flatten(), 3000, density=True)
-
-#     cdf = h_.cumsum()  # cumulative distribution function
-#     cdf = 3000 * cdf / cdf[-1]  # normalize
-
-#     # use linear interpolation of cdf to find new pixel values
-#     band_equalized = np.interp(band.flatten(), bin_[:-1], cdf)
-#     band_equalized = band_equalized.reshape(band.shape)
-
-#     return band_equalized
 
 
 def is_pdf(file, bands):
@@ -103,39 +45,26 @@ def get_pdf(
     vrt_list: dict,
     title_list: dict,
     band_combo,
-    geometry,
+    geometry: gpd.GeoDataFrame,
     output: cw.CustomAlert,
     tmp_dir: str,
-    enhance_method: str,
+    enhance_method: str = "min_max",
+    sources: list = [],
 ):
-
-    # copy geometry to build the point gdf
-    pts = geometry.copy()
-    pts.geometry = pts.geometry.centroid
-
+    pdf_filepath = get_pdf_path(file.stem, sources, bands, image_size, enhance_method)
     # build the geometries that will be drawn on the thumbnails
     # can stay in EPSG:3857 as it will be used in this projection
     geoms = geometry.to_crs(3857)
     geoms.geometry = geoms.buffer(square_size / 2, cap_style=3)
 
-    # build the dictionary to use to build the images thumbnails
-    size_dict = {}
-    for _, r in geometry.to_crs(3857).iterrows():
-        size_dict[r.id] = min_diagonal(r.geometry, image_size)
-
-    # create the buffer grid
-    buffers = pts.to_crs(3857)
-    buffers["geometry"] = buffers.apply(
-        lambda r: r.geometry.buffer(size_dict[r.id] / 2, cap_style=3), axis=1
-    )
-    buffers = buffers.to_crs(4326)
+    buffers = get_buffers(geometry, image_size)
 
     # get the disposition in col and line
     nb_col, nb_line = cp.get_dims(len(mosaics))
 
     pdf_tmps = []
 
-    output.reset_progress(len(pts), "Pdf page created")
+    output.reset_progress(len(buffers), "Pdf page created")
     for index, r in buffers.iterrows():
 
         name = re.sub("[^a-zA-Z\\d\\-\\_]", "_", unidecode(str(r.id)))
@@ -167,44 +96,33 @@ def get_pdf(
             # display the images in a fig and export it as a pdf page
             placement_id = 0
 
-            for m in mosaics:
+            for mosaic in mosaics:
 
                 # load the file
-                file = vrt_list[m]
+                file = vrt_list[mosaic]
 
                 # extract the buffer bounds
                 bounds = r.geometry.bounds
 
-                with rio.open(file) as f:
-                    data = f.read(window=from_bounds(*bounds, f.transform))
-
-                    # reproject to 3857
-                    # I want the final image to be as square not a rectangle
-                    src_crs = CRS.from_epsg(4326)
-                    dst_crs = CRS.from_epsg(3857)
-                    data, _ = warp.reproject(
-                        data,
-                        src_transform=f.transform,
-                        src_crs=src_crs,
-                        dst_crs=dst_crs,
-                    )
-
-                    # extract all the value separately, matplotlib uses
-                    # a different convention
-                    xmin, ymin, xmax, ymax = warp.transform_bounds(
-                        src_crs, dst_crs, *bounds
-                    )
+                data, (xmin, ymin, xmax, ymax) = reproject(file, bounds)
 
                 bands = []
-                for i in range(3):
-                    enhanced_band = process_band(data[i], enhance_method)
+                for i in range(data.shape[0]):
+                    enhanced_band = enhance_band(data[i], enhance_method)
                     bands.append(enhanced_band)
 
                 data = np.stack(bands, axis=0)
 
-                # data = data / 3000
-                # data = data.clip(0, 1)
-                data = np.transpose(data, [1, 2, 0])
+                if data.shape[0] == 1:
+                    # When there is only one band, do not transpose; use a colormap
+                    data = (
+                        data.squeeze()
+                    )  # Remove the single band dimension for display
+                    cmap = "viridis"  # Or another appropriate colormap like 'gray', 'RdYlGn', etc.
+                else:
+                    # For multi-band data, transpose to match (height, width, bands)
+                    data = np.transpose(data, [1, 2, 0])
+                    cmap = None  # Default, for RGB
 
                 # create the square polygon
                 x_polygon, y_polygon = geoms.loc[index]["geometry"].exterior.coords.xy
@@ -212,7 +130,10 @@ def get_pdf(
                 place = cp.getPositionPdf(placement_id, nb_col)
                 ax = axes[place[0], place[1]]
                 ax.imshow(
-                    data, interpolation="nearest", extent=[xmin, xmax, ymin, ymax]
+                    data,
+                    interpolation="nearest",
+                    extent=[xmin, xmax, ymin, ymax],
+                    cmap=cmap,  # Use the defined colormap for single-band images
                 )
 
                 ax.plot(
@@ -223,7 +144,7 @@ def get_pdf(
                 )
 
                 ax.set_title(
-                    title_list[m][index],
+                    title_list[mosaic][index],
                     x=0.0,
                     y=1.0,
                     fontsize="small",

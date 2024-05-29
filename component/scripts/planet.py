@@ -1,15 +1,16 @@
 # this file will be used as a singleton object in the explorer tile
 import re
+import tempfile
 import threading
-from concurrent import futures
+import concurrent.futures
 from datetime import datetime
 from functools import partial
 from itertools import product
 from pathlib import Path
+from typing import List
 
 import geopandas as gpd
 import numpy as np
-import planet
 import rasterio as rio
 import requests
 from osgeo import gdal
@@ -18,13 +19,12 @@ from rasterio.warp import calculate_default_transform
 from sepal_ui.planetapi import PlanetModel
 from shapely import geometry as sg
 from shapely.ops import unary_union
+from component import widget as cw
 
 from component import parameter as cp
 from component.message import cm
 
-from .utils import min_diagonal
-
-planet_model = PlanetModel()
+from .utils import get_buffers, get_quad_dict, get_vrt_filename, min_diagonal
 
 # create the regex to match the different know planet datasets
 VISUAL = re.compile("^planet_medres_visual")  # will be removed from the selection
@@ -34,14 +34,6 @@ ANALYTIC_MONTHLY = re.compile(
 ANALYTIC_BIANUAL = re.compile(
     r"^planet_medres_normalized_analytic_\d{4}-\d{2}_\d{4}-\d{2}_mosaic$"
 )  # NICFI bianual
-
-
-def check_key():
-    """raise an error if the key is not validated."""
-    if not planet_model.active:
-        raise Exception(cm.planet.invalid_key)
-
-    return
 
 
 def mosaic_name(mosaic):
@@ -75,33 +67,7 @@ def mosaic_name(mosaic):
     return type_, res
 
 
-def validate_key(key: str) -> bool:
-    """Validate the API key and save it the key variable."""
-
-    # save the key until solving
-    # https://github.com/12rambau/sepal_ui/issues/805
-    planet_model.credentials = [key]
-
-    # init session
-    # avoid the error the no validation will be checked anyway
-    try:
-        planet_model.init_session(key)
-    except Exception:
-        pass
-
-    return planet_model.active
-
-
-def list_mosaics():
-    """get all the mosaics available in a client without pagination limitations."""
-
-    BASE_URL = "https://api.planet.com/basemaps/v1/mosaics?api_key={}"
-    res = requests.get(BASE_URL.format(planet_model.credentials[0]))
-
-    return res.json()["mosaics"]
-
-
-def get_mosaics():
+def get_mosaics(planet_model):
     """Return the available mosaics as a list of items for a v.Select object, retur None if not valid."""
     # init the results from the begining
     res = []
@@ -112,7 +78,7 @@ def get_mosaics():
 
     # filter the mosaics in 3 groups
     bianual, monthly, other = [], [], []
-    for m in list_mosaics():
+    for m in planet_model.get_mosaics():
         name = m["name"]
         type_, short = mosaic_name(name)
 
@@ -134,7 +100,7 @@ def get_mosaics():
     return res
 
 
-def get_planet_grid(squares, out):
+def get_planet_grid(squares: gpd.GeoSeries, out: cw.CustomAlert) -> gpd.GeoDataFrame:
     """create a grid adapted to the points and to the planet initial grid."""
     out.add_msg(cm.planet.grid)
 
@@ -214,72 +180,73 @@ def get_planet_grid(squares, out):
     return grid_gdf
 
 
-def get_planet_vrt(geometry, mosaics, size, file, bands, out):
+def get_planet_vrt(
+    geometry: gpd.GeoDataFrame,
+    mosaics: List[str],
+    image_size: int,
+    filename: str,
+    bands: str,
+    out: cw.CustomAlert,
+    tmp_dir: Path,
+    planet_model: PlanetModel,
+):
 
-    # get the filename
-    filename = Path(file).stem
-
-    # extract the points coordinates
-    pts = geometry.copy()
-    pts.geometry = pts.geometry.centroid
-
-    # build the size dictionary
-    size_dict = {
-        r.id: min_diagonal(r.geometry, size)
-        for _, r in geometry.to_crs(3857).iterrows()
-    }
-
-    # create the buffer grid
-    buffers = pts.to_crs(3857)
-    buffers.geometry = buffers.apply(
-        lambda r: r.geometry.buffer(size_dict[r.id] / 2, cap_style=3), axis=1
-    )
-    buffers = buffers.to_crs(4326)
-
+    filename = get_vrt_filename(filename, ["planet"], bands, image_size)
+    buffers = get_buffers(gdf=geometry, size=image_size).geometry
     # find all the quads that should be downloaded and serve them as a grid
-    planet_grid = get_planet_grid(buffers.geometry, out)
+    planet_grid = get_planet_grid(buffers, out)
 
     # create a vrt for each year
     vrt_list = {}
-    nb_points = max(1, len(planet_grid) - 1)
+    nb_points = max(1, len(planet_grid))
     total_img = len(mosaics) * nb_points
-    mosaic_list = list_mosaics()
-    out.reset_progress(total_img, "Image loaded")
-    for m in mosaics:
+    mosaic_list = planet_model.get_mosaics()
+    out.reset_progress(total_img, "Progress")
 
-        # get the mosaic from the mosaic name
-        mosaic = next(i for i in mosaic_list if i["name"] == m)
+    # Create the quad id list
+    quad_ids = [
+        f"{int(row.x):04d}-{int(row.y):04d}" for _, row in planet_grid.iterrows()
+    ]
 
-        # construct the quad list
-        quads = [
-            f"{int(row.x):04d}-{int(row.y):04d}" for i, row in planet_grid.iterrows()
-        ]
+    quads_dict = get_quad_dict(planet_model, mosaics, quad_ids)
+
+    for mosaic in quads_dict:
+
+        quad_ids = quads_dict[mosaic].keys()
 
         download_params = {
             "filename": filename,
-            "name": m,
-            "mosaic": mosaic,
+            "mosaic_quads": quads_dict[mosaic],
+            "mosaic_name": mosaic,
             "bands": bands,
             "file_list": [],
             "out": out,
             "lock": threading.Lock(),
+            "tmp_dir": tmp_dir,
         }
 
-        # debugging
-        # for quad in quads:
-        #    get_quad(quad, **download_params)
+        # download the images in parralel fashion
+        with concurrent.futures.ThreadPoolExecutor() as executor:  # use all the available CPU/GPU
+            # executor.map(partial(down_buffer, **download_params), ee_buffers)
 
-        # download the requested images
-        # use all the available CPU/GPU
-        with futures.ThreadPoolExecutor() as executor:
-            executor.map(partial(get_quad, **download_params), quads)
+            futures = {
+                executor.submit(partial(get_quad, **download_params), quad_id): quad_id
+                for quad_id in quad_ids
+            }
+
+            # Check if any future has raised an exception
+            for future in concurrent.futures.as_completed(futures):
+                e = future.exception()
+                if e:
+                    raise e  # Rethrow the first exception encountered
+
         file_list = download_params["file_list"]
-
+        print("###FILE LIST", file_list)
         if file_list == []:
             raise Exception("No image have been found on Planet lab servers")
 
         # create a vrt out of it
-        vrt_path = cp.tmp_dir.joinpath(f"{filename}_{m}.vrt")
+        vrt_path = tmp_dir / f"{filename}_{mosaic}.vrt"
         ds = gdal.BuildVRT(str(vrt_path), file_list)
         ds.FlushCache()
 
@@ -287,41 +254,31 @@ def get_planet_vrt(geometry, mosaics, size, file, bands, out):
         if not vrt_path.is_file():
             raise Exception(f"the vrt {vrt_path} was not created")
 
-        vrt_list[m] = vrt_path
+        vrt_list[mosaic] = vrt_path
 
     # create a title list to be consistent
     title_list = {
-        m: {i: f"{planet.data} {mosaic_name(m)[1]}" for i in range(len(buffers))}
-        for m in mosaics
+        m: {i: f"{mosaic_name(m)[1]}" for i in range(len(buffers))} for m in mosaics
     }
 
     return vrt_list, title_list
 
 
-def get_quad_by_id(mosaic: dict, quad_id: str):
-    """Get a quad response for a specific mosaic and quad.
-
-    Args:
-    mosaic: A mosaic representation from the API
-    quad_id: A quad id (typically <xcoord>-<ycoord>)
-
-    Returns:
-        `planet.api.models.JSON`
-
-    Raises:
-        planet.api.exceptions.APIException: On API error.
-    """
-
-    url = "https://api.planet.com/basemaps/v1/mosaics/{}/quads/{}?api_key={}"
-    res = requests.get(url.format(mosaic["id"], quad_id, planet_model.credentials[0]))
-
-    return res.json()
-
-
-def get_quad(quad_id, filename, name, mosaic, bands, file_list, out, lock=None):
+def get_quad(
+    quad_id: str,
+    filename: str,
+    mosaic_quads: dict,
+    mosaic_name: str,
+    bands,
+    file_list,
+    out,
+    lock=None,
+    tmp_dir: Path = Path(tempfile.mkdtemp()),
+):
     """get one single quad from parameters."""
     # check file existence
-    file = cp.tmp_dir.joinpath(f"{filename}_{name}_{quad_id}.tif")
+    file = tmp_dir / f"{filename}_{mosaic_name}_{quad_id}.tif"
+    print("###PROCESSING FILE", file)
 
     if file.is_file():
         if lock:
@@ -330,13 +287,15 @@ def get_quad(quad_id, filename, name, mosaic, bands, file_list, out, lock=None):
 
     else:
 
-        tmp_file = cp.tmp_dir.joinpath(f"{filename}_{name}_{quad_id}_tmp.tif")
+        tmp_file = file.with_stem(file.stem + "_tmp")
 
         # to avoid the downloading of non existing quads
         try:
-            quad = get_quad_by_id(mosaic, quad_id)
+            # quad = planet_model.get_quad(mosaic, quad_id)
+            quad = mosaic_quads[quad_id][0]
             file_list.append(str(file))
         except Exception as e:
+            raise e
             out.add_msg(f"{e}", "error")
             return
 
@@ -374,4 +333,4 @@ def get_quad(quad_id, filename, name, mosaic, bands, file_list, out, lock=None):
     # update the loading bar
     out.update_progress()
 
-    return
+    return file

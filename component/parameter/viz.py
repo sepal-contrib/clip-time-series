@@ -22,6 +22,8 @@ polygon_colors = {
     "Swir2, Nir, Green": "yellow",
     "rgb": "blue",
     "cir": "yellow",
+    "ndvi": "red",
+    "ndwi": "red",
 }
 polygon_width = 2
 
