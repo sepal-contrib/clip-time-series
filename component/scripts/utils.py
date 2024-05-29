@@ -1,5 +1,5 @@
 from math import sqrt
-from typing import Union
+from typing import List, Union
 
 import ee
 import geopandas as gpd
@@ -115,7 +115,7 @@ def enhance_band(band: np.array, adjustment_type: AdjustmentType) -> np.array:
 
 def get_buffers(
     gdf: gpd.GeoDataFrame, size: int, gee: bool = False
-) -> Union[gpd.GeoDataFrame, list[ee.Geometry]]:
+) -> Union[gpd.GeoDataFrame, List[ee.Geometry]]:
     """Get the buffers of the geometries in the gdf."""
 
     geometry = gdf.copy()
