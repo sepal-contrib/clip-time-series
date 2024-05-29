@@ -38,8 +38,10 @@ jobs:
       - name: Install module venv
         run: |
           python -m pip install "git+https://github.com/12rambau/sepal_ui.git@sepal_pre_release"
+          python -m pip install pytest
           module_venv --venv_prefix venv
-      - name: Activate venv
-        run: source ~/module-venv/clip-time-series/bin/activate
-      - name: run tests
-        run: python -m pytest test/
+      - name: Activate venv and run tests
+        run: |
+          source ~/module-venv/clip-time-series/bin/activate
+          python -m pip install pytest
+          python -m pytest test/
