@@ -1,4 +1,7 @@
+import shutil
+import time
 from math import sqrt
+from pathlib import Path
 from typing import List, Union
 
 import ee
@@ -195,3 +198,28 @@ def get_quad_dict(planet_model, mosaics: list, quad_ids: list) -> dict:
             )
 
     return quads_dict
+
+
+def remove_tmp_dir(tmp_dir: str):
+    """Remove the temporary directory if it exists."""
+
+    if Path(tmp_dir).exists():
+        max_retries = 3
+        retries = 0
+
+        while retries < max_retries:
+            try:
+                shutil.rmtree(tmp_dir)
+                break
+            except OSError as e:
+                if e.errno == 39:  # Directory not empty
+                    print("Directory not empty, retrying...")
+                    time.sleep(1)  # wait a bit for files to be released
+                    retries += 1
+                else:
+                    # I don't want to raise errors if there's a problem
+                    print("Failed to remove directory.")
+                    raise
+
+        if retries == max_retries:
+            print("Failed to remove directory after several attempts.")

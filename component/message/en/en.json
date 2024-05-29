@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Time series",
+    "title": "Clip time series",
     "drawer_item": {
       "point": "Import points",
       "viz": "Visualize Points",

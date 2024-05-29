@@ -1,10 +1,10 @@
-import shutil
 import tempfile
 from pathlib import Path
 
 from component.scripts.export import get_pdf
 from component.scripts.gee import get_gee_vrt
 from component.scripts.planet import get_planet_vrt
+from component.scripts.utils import remove_tmp_dir
 
 
 def test_get_gee_pdf(geometries, alert):
@@ -47,7 +47,7 @@ def test_get_gee_pdf(geometries, alert):
     except Exception as e:
         raise e
     finally:
-        shutil.rmtree(tmp_dir)
+        remove_tmp_dir(tmp_dir)
 
 
 def test_get_planet_pdf(geometries, alert, planet_model):
@@ -96,4 +96,4 @@ def test_get_planet_pdf(geometries, alert, planet_model):
     except Exception as e:
         raise e
     finally:
-        shutil.rmtree(tmp_dir)
+        remove_tmp_dir(tmp_dir)

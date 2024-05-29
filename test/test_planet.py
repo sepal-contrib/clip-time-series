@@ -1,5 +1,4 @@
 import os
-import shutil
 import sys
 
 import pytest
@@ -14,6 +13,7 @@ from component.scripts.planet import get_planet_grid, get_planet_vrt, get_quad
 from component.scripts.utils import (
     get_buffers,
     get_quad_dict,
+    remove_tmp_dir,
 )
 
 # Test different parameters
@@ -63,7 +63,7 @@ def test_get_planet_vrt(
     except Exception as e:
         raise e
     finally:
-        shutil.rmtree(tmp_dir)
+        remove_tmp_dir(tmp_dir)
 
 
 def test_get_planet_grid(geometries, alert):
@@ -131,4 +131,4 @@ def test_get_planet_quad(planet_model, alert):
     except Exception as e:
         raise e
     finally:
-        shutil.rmtree(tmp_dir)
+        remove_tmp_dir(tmp_dir)
