@@ -18,15 +18,11 @@ def test_get_gee_pdf(geometries, alert):
         bands = "Red, Green, Blue"
         square_size = 90
 
-        pdf_filepath = get_pdf_path(
-            input_file_path.stem, sources, bands, square_size, image_size
-        )
-
         vrt_list, title_list = get_gee_vrt(
             geometries,
             mosaics,
             image_size,
-            pdf_filepath.stem,
+            input_file_path.stem,
             bands,
             sources,
             alert,
@@ -34,7 +30,7 @@ def test_get_gee_pdf(geometries, alert):
         )
 
         pdf_file = get_pdf(
-            pdf_filepath=pdf_filepath,
+            input_file_path=input_file_path,
             mosaics=mosaics,
             image_size=image_size,
             square_size=square_size,
@@ -46,7 +42,6 @@ def test_get_gee_pdf(geometries, alert):
             tmp_dir=tmp_dir,
         )
 
-        assert pdf_file == pdf_filepath
         assert pdf_file.is_file()
 
     except Exception as e:
@@ -66,22 +61,15 @@ def test_get_planet_pdf(geometries, alert, planet_model):
             "planet_medres_normalized_analytic_2020-09_mosaic",
         ]
 
-        size = 250
-        sources = ["planet"]
+        image_size = 250
         bands = "cir"
         square_size = 90
-
-        pdf_filepath = get_pdf_path(
-            input_file_path.stem, sources, bands, size, "min_max"
-        )
-
-        vrt_filename = get_vrt_filename(input_file_path.stem, sources, bands, size)
 
         vrt_list, title_list = get_planet_vrt(
             geometry=geometries,
             mosaics=mosaics,
-            size=size,
-            filename=vrt_filename,
+            image_size=image_size,
+            filename=input_file_path.stem,
             bands=bands,
             out=alert,
             tmp_dir=tmp_dir,
@@ -89,9 +77,9 @@ def test_get_planet_pdf(geometries, alert, planet_model):
         )
 
         pdf_file = get_pdf(
-            pdf_filepath=pdf_filepath,
+            input_file_path=input_file_path,
             mosaics=mosaics,
-            image_size=size,
+            image_size=image_size,
             square_size=square_size,
             vrt_list=vrt_list,
             title_list=title_list,
@@ -103,7 +91,6 @@ def test_get_planet_pdf(geometries, alert, planet_model):
         )
         print("#####", pdf_file)
 
-        assert pdf_file == pdf_filepath
         assert pdf_file.is_file()
 
     except Exception as e:

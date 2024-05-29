@@ -38,7 +38,7 @@ def is_pdf(file, bands):
 
 
 def get_pdf(
-    pdf_filepath: Path,
+    input_file_path: Path,
     mosaics: list,
     image_size: int,
     square_size: int,
@@ -51,7 +51,9 @@ def get_pdf(
     enhance_method: str = "min_max",
     sources: list = [],
 ):
-    pdf_filepath = get_pdf_path(file.stem, sources, bands, image_size, enhance_method)
+    pdf_filepath = get_pdf_path(
+        input_file_path.stem, sources, band_combo, image_size, enhance_method
+    )
     # build the geometries that will be drawn on the thumbnails
     # can stay in EPSG:3857 as it will be used in this projection
     geoms = geometry.to_crs(3857)

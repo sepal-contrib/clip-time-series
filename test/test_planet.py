@@ -40,7 +40,6 @@ def test_get_planet_vrt(
     try:
         tmp_dir = Path(tempfile.mkdtemp())
         input_file_path = tmp_dir / "test_points.csv"
-        sources = ["planet"]
 
         vrt_list, title_list = get_planet_vrt(
             geometries,
