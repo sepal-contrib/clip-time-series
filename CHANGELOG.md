@@ -1,3 +1,18 @@
+## 0.3.0 (2024-05-29)
+
+### Feat
+
+- give sepal_template name and set mdoule name in appbar
+- typos
+- fix gee sources
+- improve export visualization methods
+- Add authentication cell
+
+### Refactor
+
+- adapt to planet_model
+- **ui.ipynb**: update sepal entrypoint
+
 ## 0.2.0 (2023-12-11)
 
 ### Feat
