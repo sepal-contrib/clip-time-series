@@ -1,14 +1,12 @@
-"mosaics, image_size, sources, bands, square_size"
 import ee
 
+"mosaics, image_size, sources, bands"
 
-a_inputs = [2024], 250, ["landsat"], "Red, Green, Blue", 90
+a_inputs = [2024], 250, ["landsat"], "Red, Green, Blue"
 
 
 def a_expected_vrt_list(tmp_dir):
-    return {
-        2024: tmp_dir / "test_points_landsat_Red_Green_Blue_sqSize90_size250_2024.vrt"
-    }
+    return {2024: tmp_dir / "test_points_landsat_Red_Green_Blue_size250_2024.vrt"}
 
 
 a_expected_title_list = {
@@ -24,13 +22,13 @@ a_expected_title_list = {
 
 # test with more than one year
 
-b_inputs = [2024, 2023], 500, ["landsat"], "Red, Green, Blue", 90
+b_inputs = [2024, 2023], 500, ["landsat"], "Red, Green, Blue"
 
 
 def b_expected_vrt_list(tmp_dir):
     return {
-        2024: tmp_dir / "test_points_landsat_Red_Green_Blue_sqSize90_size500_2024.vrt",
-        2023: tmp_dir / "test_points_landsat_Red_Green_Blue_sqSize90_size500_2023.vrt",
+        2024: tmp_dir / "test_points_landsat_Red_Green_Blue_size500_2024.vrt",
+        2023: tmp_dir / "test_points_landsat_Red_Green_Blue_size500_2023.vrt",
     }
 
 
@@ -53,14 +51,11 @@ b_expected_title_list = {
 
 
 # Test with sentinel
-
-c_inputs = [2024], 250, ["sentinel"], "Red, Green, Blue", 90
+c_inputs = [2024], 250, ["sentinel"], "Red, Green, Blue"
 
 
 def c_expected_vrt_list(tmp_dir):
-    return {
-        2024: tmp_dir / "test_points_sentinel_Red_Green_Blue_sqSize90_size250_2024.vrt"
-    }
+    return {2024: tmp_dir / "test_points_sentinel_Red_Green_Blue_size250_2024.vrt"}
 
 
 c_expected_title_list = {
@@ -76,15 +71,13 @@ c_expected_title_list = {
 
 # Test with multiple years
 
-d_inputs = [2019, 2021], 250, ["sentinel", "landsat"], "Red, Green, Blue", 90
+d_inputs = [2019, 2021], 250, ["sentinel", "landsat"], "Red, Green, Blue"
 
 
 def d_expected_vrt_list(tmp_dir):
     return {
-        2019: tmp_dir
-        / "test_points_sentinel_landsat_Red_Green_Blue_sqSize90_size250_2019.vrt",
-        2021: tmp_dir
-        / "test_points_sentinel_landsat_Red_Green_Blue_sqSize90_size250_2021.vrt",
+        2019: tmp_dir / "test_points_sentinel_landsat_Red_Green_Blue_size250_2019.vrt",
+        2021: tmp_dir / "test_points_sentinel_landsat_Red_Green_Blue_size250_2021.vrt",
     }
 
 

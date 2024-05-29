@@ -2,6 +2,9 @@ import pytest
 import geopandas as gpd
 import component.widget as cw
 import io
+import os
+
+from sepal_ui.planetapi import PlanetModel
 
 
 @pytest.fixture
@@ -17,3 +20,10 @@ def geometries():
 @pytest.fixture
 def alert():
     return cw.CustomAlert()
+
+
+@pytest.fixture
+def planet_model():
+    # Get planet api key from the environment
+    api_key = os.getenv("PLANET_API_KEY")
+    return PlanetModel(api_key)
