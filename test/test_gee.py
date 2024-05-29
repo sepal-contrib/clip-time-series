@@ -1,10 +1,11 @@
 import os
-import shutil
 import sys
 
 import ee
 import pytest
 import rasterio
+
+from component.scripts.utils import remove_tmp_dir
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -60,7 +61,7 @@ def test_get_gee_vrt(
     except Exception as e:
         raise e
     finally:
-        shutil.rmtree(tmp_dir)
+        remove_tmp_dir(tmp_dir)
 
 
 def test_get_ee_image():

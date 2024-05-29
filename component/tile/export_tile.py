@@ -1,4 +1,3 @@
-import shutil
 import tempfile
 from pathlib import Path
 
@@ -13,7 +12,7 @@ from wand.image import Image
 from component import scripts as cs
 from component import widget as cw
 from component.message import cm
-from component.scripts.utils import get_pdf_path
+from component.scripts.utils import get_pdf_path, remove_tmp_dir
 
 
 class ExportResult(sw.Tile):
@@ -155,6 +154,6 @@ class ExportData(sw.Tile):
 
         finally:
             # remove the temporary folder in any case
-            shutil.rmtree(tmp_dir)
+            remove_tmp_dir(tmp_dir)
 
         return

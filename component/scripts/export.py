@@ -1,5 +1,4 @@
 import re
-import shutil
 from pathlib import Path
 
 import geopandas as gpd
@@ -13,7 +12,7 @@ from unidecode import unidecode
 from component import parameter as cp
 from component import widget as cw
 
-from .utils import enhance_band, get_buffers, get_pdf_path, reproject
+from .utils import enhance_band, get_buffers, get_pdf_path, remove_tmp_dir, reproject
 
 init_ee()
 
@@ -178,8 +177,7 @@ def get_pdf(
     merger.write(str(pdf_filepath))
 
     # flush the tmp repository
-    shutil.rmtree(cp.tmp_dir)
-    cp.tmp_dir.mkdir()
+    remove_tmp_dir(tmp_dir)
 
     output.add_live_msg(f"PDF output finished: {pdf_filepath}", "success")
 
