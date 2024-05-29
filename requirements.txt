@@ -1,6 +1,7 @@
 voila
 toml
 earthengine-api
+nox
 
 # Fixes authentication process
 git+https://github.com/12rambau/sepal_ui.git@sepal_pre_release
