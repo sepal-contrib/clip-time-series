@@ -10,7 +10,14 @@ Each mosaic will be represented in a square of custom size from 500x500m to 1000
 
 The input can be a table file discribing points or a shapefile using geometries.
 
-Colors are stretched using [histogram equalization](https://en.wikipedia.org/wiki/Histogram_equalization).
+The output can be adjusted using any of the following enhancement methods:
+
+- Histogram Equalization
+- Contrast Stretching
+- Adaptive Equalization
+- Standard Deviation
+- Percent Clip
+- Min-Max
 
 To produce this image the software will use the most recent satellite with a cloudless mosaic using the following priority order :
 
