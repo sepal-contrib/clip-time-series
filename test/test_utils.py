@@ -37,7 +37,7 @@ def test_enhance_band(alert):
     alert.reset_progress(len(ee_buffers), "Progress")
 
     ee_tasks, _ = get_ee_tasks(
-        [year], ee_buffers, descriptions, sources, bands, tmp_dir
+        [year], ee_buffers, descriptions, sources, bands, tmp_dir, alert
     )
 
     # Get the first year
