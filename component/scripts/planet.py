@@ -189,6 +189,7 @@ def get_planet_vrt(
     out: cw.CustomAlert,
     tmp_dir: Path,
     planet_model: PlanetModel,
+    shared_variable: threading.Event,
 ):
 
     filename = get_vrt_filename(filename, ["planet"], bands, image_size)
@@ -215,6 +216,7 @@ def get_planet_vrt(
         quad_ids = quads_dict[mosaic].keys()
 
         download_params = {
+            "shared_variable": shared_variable,
             "filename": filename,
             "mosaic_quads": quads_dict[mosaic],
             "mosaic_name": mosaic,
@@ -273,9 +275,13 @@ def get_quad(
     out,
     lock=None,
     tmp_dir: Path = Path(tempfile.mkdtemp()),
+    shared_variable: threading.Event = None,
 ):
     """get one single quad from parameters."""
     # check file existence
+    if shared_variable and shared_variable.is_set():
+        return
+
     file = tmp_dir / f"{filename}_{mosaic_name}_{quad_id}.tif"
     print("###PROCESSING FILE", file)
 

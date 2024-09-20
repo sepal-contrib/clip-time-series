@@ -12,6 +12,7 @@ from wand.image import Image
 from component import scripts as cs
 from component import widget as cw
 from component.message import cm
+from component.scripts.task_controller import TaskController
 from component.scripts.utils import get_pdf_path, remove_tmp_dir
 
 
@@ -58,7 +59,10 @@ class ExportData(sw.Tile):
             alert=cw.CustomAlert(),
             inputs=[txt, w_overwrite, w_enhanced],
         )
-
+        self.stop_btn = sw.Btn(
+            text="Stop", small=True, class_="ml-2", color="secondary    "
+        )
+        self.set_children(self.stop_btn, "last")
         # js behaviour
         self.btn.on_event("click", self._export_data)
 
@@ -86,74 +90,91 @@ class ExportData(sw.Tile):
             file.stem, sources, bands, image_size, enhance_method
         )
 
-        try:
-
-            if pdf_filepath.is_file() and not self.ex_model.overwrite:
-                self.alert.add_live_msg("Pdf already exist", "success")
-                return
-
+        def process(shared_variable):
             # create the vrt from gee images
             if self.viz_model.driver == "planet":
                 vrt_list, title_list = cs.get_planet_vrt(
-                    geometry,
-                    mosaics,
-                    image_size,
-                    file.stem,
-                    bands,
-                    self.alert,
-                    tmp_dir,
-                    self.planet_model,
+                    geometry=geometry,
+                    mosaics=mosaics,
+                    image_size=image_size,
+                    filename=file.stem,
+                    bands=bands,
+                    out=self.alert,
+                    tmp_dir=tmp_dir,
+                    planet_model=self.planet_model,
+                    shared_variable=shared_variable,
                 )
 
             elif self.viz_model.driver == "gee":
                 vrt_list, title_list = cs.get_gee_vrt(
-                    geometry,
-                    mosaics,
-                    image_size,
-                    file.stem,
-                    bands,
-                    sources,
-                    self.alert,
-                    tmp_dir,
+                    geometry=geometry,
+                    mosaics=mosaics,
+                    image_size=image_size,
+                    filename=file.stem,
+                    bands=bands,
+                    sources=sources,
+                    output=self.alert,
+                    tmp_dir=tmp_dir,
+                    shared_variable=shared_variable,
                 )
 
             # export as pdf
             pdf_file = cs.get_pdf(
-                file,
-                mosaics,
-                image_size,
-                square_size,
-                vrt_list,
-                title_list,
-                bands,
-                geometry,
-                self.alert,
-                tmp_dir,
-                enhance_method,
-                sources,
+                input_file_path=file,
+                mosaics=mosaics,
+                image_size=image_size,
+                square_size=square_size,
+                vrt_list=vrt_list,
+                title_list=title_list,
+                band_combo=bands,
+                geometry=geometry,
+                output=self.alert,
+                tmp_dir=tmp_dir,
+                enhance_method=enhance_method,
+                sources=sources,
+                shared_variable=shared_variable,
             )
 
-            # create a download btn
-            dwn = sw.DownloadBtn(cm.export.down_btn, path=str(pdf_file))
+            return pdf_file
 
-            # create a preview of the first page
-            pdf_file = str(pdf_file)
-            preview = pdf_file.replace(".pdf", "_preview.png")
+        def on_task_complete(pdf_file):
+            try:
+                # create a download button
+                dwn = sw.DownloadBtn(cm.export.down_btn, path=str(pdf_file))
 
-            with Image(filename=f"{pdf_file}[0]") as img:
-                img.background_color = Color("white")
-                img.alpha_channel = "remove"
-                img.save(filename=preview)
+                # create a preview of the first page
+                pdf_file = str(pdf_file)
+                preview = pdf_file.replace(".pdf", "_preview.png")
 
-            img_widget = w.Image(value=open(preview, "rb").read())
+                with Image(filename=f"{pdf_file}[0]") as img:
+                    img.background_color = Color("white")
+                    img.alpha_channel = "remove"
+                    img.save(filename=preview)
 
-            self.result_tile.set_content([dwn, img_widget])
+                img_widget = w.Image(value=open(preview, "rb").read())
+
+                self.result_tile.set_content([dwn, img_widget])
+            except Exception as e:
+                self.alert.append_msg(f"Error in callback: {e}", type_="error")
+                raise e
+            finally:
+                # remove the temporary folder
+                remove_tmp_dir(tmp_dir)
+
+        try:
+            if pdf_filepath.is_file() and not self.ex_model.overwrite:
+                self.alert.add_live_msg("Pdf already exists", "success")
+                return
+
+            # Start the task with the callback
+            task_controller = TaskController(
+                self.btn,
+                self.stop_btn,
+                self.alert,
+                function=process,
+                callback=on_task_complete,
+            )
+            task_controller.start_task()
 
         except Exception as e:
             raise e
-
-        finally:
-            # remove the temporary folder in any case
-            remove_tmp_dir(tmp_dir)
-
-        return

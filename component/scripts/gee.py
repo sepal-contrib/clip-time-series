@@ -34,6 +34,7 @@ def get_gee_vrt(
     sources,
     output: cw.CustomAlert,
     tmp_dir: Path,
+    shared_variable,
 ):
     filename = get_vrt_filename(filename, sources, bands, image_size)
     ee_buffers = get_buffers(gdf=geometry, size=image_size, gee=True)
@@ -47,16 +48,25 @@ def get_gee_vrt(
 
     # Collect EE API results
     ee_tasks, satellites = get_ee_tasks(
-        mosaics, ee_buffers, descriptions, sources, bands, tmp_dir, output
+        mosaics,
+        ee_buffers,
+        descriptions,
+        sources,
+        bands,
+        tmp_dir,
+        output,
+        shared_variable,
     )
 
     output.reset_progress(total_images, "Downloading images....")
 
     # Download images in parallel and get the downloaded file paths
-    downloaded_files = download_images_in_parallel(ee_tasks, output)
+    downloaded_files = download_images_in_parallel(ee_tasks, output, shared_variable)
 
     # Create VRT files per year using the downloaded file paths and descriptions
-    vrt_list = create_vrt_per_year(downloaded_files, descriptions, tmp_dir)
+    vrt_list = create_vrt_per_year(
+        downloaded_files, descriptions, tmp_dir, shared_variable
+    )
 
     # Generate title list
     title_list = generate_title_list(mosaics, satellites, ee_buffers)
@@ -160,7 +170,7 @@ def get_image(
 
 
 def get_ee_tasks(
-    mosaics, ee_buffers, descriptions, sources, bands, tmp_dir, output
+    mosaics, ee_buffers, descriptions, sources, bands, tmp_dir, output, shared_variable
 ) -> Tuple[dict[int, List[Params]], dict]:
     """
     Collect Earth Engine API results for each buffer and year.
@@ -169,6 +179,7 @@ def get_ee_tasks(
         ee_tasks: A dictionary containing download parameters per year.
         satellites: A dictionary tracking the satellites used per year and buffer.
     """
+
     satellites = {}
     ee_tasks = {}
     for year in mosaics:
@@ -177,6 +188,9 @@ def get_ee_tasks(
         ee_tasks[year] = []
 
         for j, buffer in enumerate(ee_buffers):
+
+            if shared_variable and shared_variable.is_set():
+                raise Exception("The process was interrupted by the user.")
 
             image, sat = get_image(sources, bands, buffer, year)
             if sat is None:
@@ -211,7 +225,9 @@ def get_ee_tasks(
     return ee_tasks, satellites
 
 
-def download_images_in_parallel(ee_tasks: dict[int, Params], output):
+def download_images_in_parallel(
+    ee_tasks: dict[int, Params], output, shared_variable=None
+):
     """
     Download images in parallel using ThreadPoolExecutor.
 
@@ -226,7 +242,9 @@ def download_images_in_parallel(ee_tasks: dict[int, Params], output):
         downloaded_files[year] = []
         with concurrent.futures.ThreadPoolExecutor() as executor:
             futures = {
-                executor.submit(download_image, params, progress_lock, output): params
+                executor.submit(
+                    download_image, params, progress_lock, output, shared_variable
+                ): params
                 for params in download_params_list
             }
 
@@ -243,7 +261,7 @@ def download_images_in_parallel(ee_tasks: dict[int, Params], output):
     return downloaded_files
 
 
-def create_vrt_per_year(downloaded_files, descriptions, tmp_dir):
+def create_vrt_per_year(downloaded_files, descriptions, tmp_dir, shared_variable=None):
     """
     Create a VRT file for each year by combining the downloaded TIFF files.
 
@@ -257,6 +275,10 @@ def create_vrt_per_year(downloaded_files, descriptions, tmp_dir):
     """
     vrt_list = {}
     for year, filepaths in downloaded_files.items():
+
+        if shared_variable and shared_variable.is_set():
+            raise Exception("The process was interrupted by the user.")
+
         # Ensure all file paths are strings
         filepaths = [str(f) for f in filepaths]
 
@@ -298,7 +320,9 @@ def generate_title_list(mosaics, satellites, ee_buffers):
     return title_list
 
 
-def download_image(params: Params, progress_lock=None, output=None):
+def download_image(
+    params: Params, progress_lock=None, output=None, shared_variable=None
+):
     """
     Download a single image and update progress.
 
@@ -310,6 +334,10 @@ def download_image(params: Params, progress_lock=None, output=None):
     Returns:
         dst: The path to the downloaded TIFF file.
     """
+
+    if shared_variable and shared_variable.is_set():
+        raise Exception("The process was interrupted by the user.")
+
     print(params)
     link = params["link"]
     description = params["description"]

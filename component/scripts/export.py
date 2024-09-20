@@ -46,6 +46,7 @@ def get_pdf(
     tmp_dir: str,
     enhance_method: str = "min_max",
     sources: list = [],
+    shared_variable=None,
 ):
     pdf_filepath = get_pdf_path(
         input_file_path.stem, sources, band_combo, image_size, enhance_method
@@ -64,6 +65,9 @@ def get_pdf(
 
     output.reset_progress(len(buffers), "Pdf page created")
     for index, r in buffers.iterrows():
+
+        if shared_variable and shared_variable.is_set():
+            raise Exception("Process interrupted by the user")
 
         name = re.sub("[^a-zA-Z\\d\\-\\_]", "_", unidecode(str(r.id)))
 
