@@ -43,12 +43,14 @@ def get_gee_vrt(
 
     nb_points = max(1, len(ee_buffers))
     total_images = len(mosaics) * nb_points
-    output.reset_progress(total_images, "Progress")
+    output.reset_progress(total_images, "Requesting images....")
 
     # Collect EE API results
     ee_tasks, satellites = get_ee_tasks(
-        mosaics, ee_buffers, descriptions, sources, bands, tmp_dir
+        mosaics, ee_buffers, descriptions, sources, bands, tmp_dir, output
     )
+
+    output.reset_progress(total_images, "Downloading images....")
 
     # Download images in parallel and get the downloaded file paths
     downloaded_files = download_images_in_parallel(ee_tasks, output)
@@ -158,12 +160,7 @@ def get_image(
 
 
 def get_ee_tasks(
-    mosaics,
-    ee_buffers,
-    descriptions,
-    sources,
-    bands,
-    tmp_dir,
+    mosaics, ee_buffers, descriptions, sources, bands, tmp_dir, output
 ) -> Tuple[dict[int, List[Params]], dict]:
     """
     Collect Earth Engine API results for each buffer and year.
@@ -208,6 +205,8 @@ def get_ee_tasks(
                     "tmp_dir": tmp_dir,
                 }
             )
+
+            output.update_progress()
 
     return ee_tasks, satellites
 
