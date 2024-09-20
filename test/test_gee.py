@@ -15,9 +15,9 @@ from test.gee_results import *
 
 from component import parameter as cp
 from component.scripts.gee import (
-    collect_ee_results,
     download_image,
     get_ee_image,
+    get_ee_tasks,
     get_gee_vrt,
 )
 
@@ -154,12 +154,12 @@ def test_download_image(alert):
     tmp_dir = Path(tempfile.mkdtemp())
     alert.reset_progress(len(ee_buffers), "Progress")
 
-    ee_results, _ = collect_ee_results(
+    ee_tasks, _ = get_ee_tasks(
         [year], ee_buffers, descriptions, sources, bands, tmp_dir
     )
 
     # Get the first year
-    year, params = next(iter(ee_results.items()))
+    year, params = next(iter(ee_tasks.items()))
 
     # Get the first buffer
     params = params[0]
@@ -182,12 +182,12 @@ def test_download_image(alert):
     tmp_dir = Path(tempfile.mkdtemp())
     alert.reset_progress(len(ee_buffers), "Progress")
 
-    ee_results, _ = collect_ee_results(
+    ee_tasks, _ = get_ee_tasks(
         [year], ee_buffers, descriptions, sources, bands, tmp_dir
     )
 
     # Get the first year
-    year, params = next(iter(ee_results.items()))
+    year, params = next(iter(ee_tasks.items()))
 
     # Get the first buffer
     params = params[0]
@@ -207,12 +207,12 @@ def test_download_image(alert):
     tmp_dir = Path(tempfile.mkdtemp())
     alert.reset_progress(len(ee_buffers), "Progress")
 
-    ee_results, _ = collect_ee_results(
+    ee_tasks, _ = get_ee_tasks(
         [year], ee_buffers, descriptions, sources, bands, tmp_dir
     )
 
     # Get the first year
-    year, params = next(iter(ee_results.items()))
+    year, params = next(iter(ee_tasks.items()))
 
     # Get the first buffer
     params = params[0]

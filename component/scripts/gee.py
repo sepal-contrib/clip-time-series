@@ -46,12 +46,12 @@ def get_gee_vrt(
     output.reset_progress(total_images, "Progress")
 
     # Collect EE API results
-    ee_results, satellites = collect_ee_results(
+    ee_tasks, satellites = get_ee_tasks(
         mosaics, ee_buffers, descriptions, sources, bands, tmp_dir
     )
 
     # Download images in parallel and get the downloaded file paths
-    downloaded_files = download_images_in_parallel(ee_results, output)
+    downloaded_files = download_images_in_parallel(ee_tasks, output)
 
     # Create VRT files per year using the downloaded file paths and descriptions
     vrt_list = create_vrt_per_year(downloaded_files, descriptions, tmp_dir)
@@ -157,7 +157,7 @@ def get_image(
     return (ee_image, satellite_id)
 
 
-def collect_ee_results(
+def get_ee_tasks(
     mosaics,
     ee_buffers,
     descriptions,
@@ -169,15 +169,15 @@ def collect_ee_results(
     Collect Earth Engine API results for each buffer and year.
 
     Returns:
-        ee_results: A dictionary containing download parameters per year.
+        ee_tasks: A dictionary containing download parameters per year.
         satellites: A dictionary tracking the satellites used per year and buffer.
     """
     satellites = {}
-    ee_results = {}
+    ee_tasks = {}
     for year in mosaics:
 
         satellites[year] = [None] * len(ee_buffers)
-        ee_results[year] = []
+        ee_tasks[year] = []
 
         for j, buffer in enumerate(ee_buffers):
 
@@ -201,7 +201,7 @@ def collect_ee_results(
             )
 
             # Store the necessary information for downloading
-            ee_results[year].append(
+            ee_tasks[year].append(
                 {
                     "link": link,
                     "description": description,
@@ -209,10 +209,10 @@ def collect_ee_results(
                 }
             )
 
-    return ee_results, satellites
+    return ee_tasks, satellites
 
 
-def download_images_in_parallel(ee_results: dict[int, Params], output):
+def download_images_in_parallel(ee_tasks: dict[int, Params], output):
     """
     Download images in parallel using ThreadPoolExecutor.
 
@@ -223,7 +223,7 @@ def download_images_in_parallel(ee_results: dict[int, Params], output):
     progress_lock = threading.Lock()
     downloaded_files = {}  # To store the downloaded file paths
 
-    for year, download_params_list in ee_results.items():
+    for year, download_params_list in ee_tasks.items():
         downloaded_files[year] = []
         with concurrent.futures.ThreadPoolExecutor() as executor:
             futures = {
