@@ -5,7 +5,7 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
-from pypdf import PdfMerger
+from pypdf import PdfWriter
 from sepal_ui.scripts.utils import init_ee
 from unidecode import unidecode
 
@@ -171,7 +171,7 @@ def get_pdf(
 
     # merge all the pdf files
     output.add_live_msg("merge all pdf files")
-    merger = PdfMerger()
+    merger = PdfWriter()
     for pdf in pdf_tmps:
         merger.append(pdf)
     merger.write(str(pdf_filepath))
