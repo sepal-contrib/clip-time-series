@@ -14,7 +14,12 @@ from pathlib import Path
 from test.gee_results import *
 
 from component import parameter as cp
-from component.scripts.gee import down_buffer, get_ee_image, get_gee_vrt
+from component.scripts.gee import (
+    download_image,
+    get_ee_image,
+    get_ee_tasks,
+    get_gee_vrt,
+)
 
 # Test different parameters
 parameters = [
@@ -127,7 +132,7 @@ def test_get_ee_image():
     assert dataset.getInfo()
 
 
-def test_down_buffer(alert):
+def test_download_image(alert):
 
     buffer = ee.Geometry.Polygon(
         [
@@ -146,21 +151,20 @@ def test_down_buffer(alert):
     ee_buffers = [buffer]
     year = 2021
     descriptions = {2021: "test_2021"}
-    satellites = cp.getSatellites(sources, year)
     tmp_dir = Path(tempfile.mkdtemp())
     alert.reset_progress(len(ee_buffers), "Progress")
 
-    image = down_buffer(
-        buffer,
-        sources,
-        bands,
-        ee_buffers,
-        year,
-        descriptions,
-        alert,
-        satellites,
-        tmp_dir,
+    ee_tasks, _ = get_ee_tasks(
+        [year], ee_buffers, descriptions, sources, bands, tmp_dir, alert
     )
+
+    # Get the first year
+    year, params = next(iter(ee_tasks.items()))
+
+    # Get the first buffer
+    params = params[0]
+
+    image = download_image(params=params)
 
     # open the output .tif image with rasterio and assert it has the right bands
     with rasterio.open(image) as src:
@@ -175,21 +179,20 @@ def test_down_buffer(alert):
     ee_buffers = [buffer]
     year = 2021
     descriptions = {2021: "sentinel_ndwi_2021"}
-    satellites = cp.getSatellites(sources, year)
     tmp_dir = Path(tempfile.mkdtemp())
     alert.reset_progress(len(ee_buffers), "Progress")
 
-    image = down_buffer(
-        buffer,
-        sources,
-        bands,
-        ee_buffers,
-        year,
-        descriptions,
-        alert,
-        satellites,
-        tmp_dir,
+    ee_tasks, _ = get_ee_tasks(
+        [year], ee_buffers, descriptions, sources, bands, tmp_dir, alert
     )
+
+    # Get the first year
+    year, params = next(iter(ee_tasks.items()))
+
+    # Get the first buffer
+    params = params[0]
+
+    image = download_image(params=params)
 
     with rasterio.open(image) as src:
         array = src.read()
@@ -201,21 +204,20 @@ def test_down_buffer(alert):
     ee_buffers = [buffer]
     year = 2021
     descriptions = {2021: "sentinel_ndwi_2021"}
-    satellites = cp.getSatellites(sources, year)
     tmp_dir = Path(tempfile.mkdtemp())
     alert.reset_progress(len(ee_buffers), "Progress")
 
-    image = down_buffer(
-        buffer,
-        sources,
-        bands,
-        ee_buffers,
-        year,
-        descriptions,
-        alert,
-        satellites,
-        tmp_dir,
+    ee_tasks, _ = get_ee_tasks(
+        [year], ee_buffers, descriptions, sources, bands, tmp_dir, alert
     )
+
+    # Get the first year
+    year, params = next(iter(ee_tasks.items()))
+
+    # Get the first buffer
+    params = params[0]
+
+    image = download_image(params=params)
 
     with rasterio.open(image) as src:
         array = src.read()

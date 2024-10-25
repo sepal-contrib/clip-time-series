@@ -226,8 +226,7 @@ def get_planet_vrt(
         }
 
         # download the images in parralel fashion
-        with concurrent.futures.ThreadPoolExecutor() as executor:  # use all the available CPU/GPU
-            # executor.map(partial(down_buffer, **download_params), ee_buffers)
+        with concurrent.futures.ThreadPoolExecutor() as executor:
 
             futures = {
                 executor.submit(partial(get_quad, **download_params), quad_id): quad_id
