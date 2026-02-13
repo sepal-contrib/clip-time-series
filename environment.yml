@@ -1,0 +1,21 @@
+name: clip_time_series
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - gdal=3.8.3
+  - pyproj
+  - geopandas
+  - voila
+  - toml
+  - natsort
+  - pypdf
+  - unidecode
+  - pip
+  - pip:
+      - git+https://github.com/openforis/sepal_ui@v3.0.0.beta-0
+      - rasterio<1.3.11
+      - earthengine-api
+      - nox
+      - Wand==0.6.7
