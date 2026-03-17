@@ -18,16 +18,11 @@ jobs:
       - uses: mamba-org/setup-micromamba@v2
         with:
           environment-file: sepal_environment.yml
-          cache-environment: false
+          cache-environment: true
 
-      - name: Simulate patched conda recipe (remove conda ee-api, install fork)
+      - name: Check ee-api version
         shell: micromamba-shell {0}
-        run: |
-          echo "=== Before ==="
-          pip show earthengine-api | head -3
-          pip install --no-deps --force-reinstall "git+https://github.com/openforis/earthengine-api.git@v1.1.5rc0#egg=earthengine-api&subdirectory=python"
-          echo "=== After ==="
-          pip show earthengine-api | head -3
+        run: pip show earthengine-api | head -3
 
       - name: Install test deps
         shell: micromamba-shell {0}
