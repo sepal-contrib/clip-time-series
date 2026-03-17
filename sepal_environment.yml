@@ -4,8 +4,8 @@ channels:
   - defaults
 dependencies:
   - python=3.10
-  - sepal-ui>=2.22.1,<3
   - pyproj # Always include to avoid PROJ conflicts
+  - rasterio<=1.4.3
   - toml
   - nox
   - gdal=3.8.3
@@ -17,5 +17,5 @@ dependencies:
   - pip
   - scikit-image=0.24.0
   - pip:
+      - sepal_ui==2.21.0
       - git+https://github.com/openforis/earthengine-api.git@v1.1.5rc0#egg=earthengine-api&subdirectory=python
-      - rasterio<=1.4.3
