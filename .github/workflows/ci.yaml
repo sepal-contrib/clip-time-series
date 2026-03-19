@@ -20,9 +20,10 @@ jobs:
           environment-file: sepal_environment.yml
           cache-environment: true
 
-      - name: Check ee-api version
+      - name: Verify ee-api fork
         shell: micromamba-shell {0}
-        run: pip show earthengine-api | head -3
+        run: |
+          python -c "import ee; v=ee.__version__; print('ee-api:', v); assert v == '1.1.5rc0', 'Expected fork 1.1.5rc0, got ' + v"
 
       - name: Install test deps
         shell: micromamba-shell {0}
